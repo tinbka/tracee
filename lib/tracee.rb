@@ -1,5 +1,7 @@
-require 'rmtools'
+require 'active_support'
 require 'colorize'
 require 'tracee/version'
 require 'tracee/logger'
 require 'tracee/stream'
+require 'tracee/formatters/base'
+require 'tracee/formatters/template'
