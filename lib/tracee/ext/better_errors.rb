@@ -9,18 +9,18 @@ module Tracee
         end
         
         def log_exception_with_decorate
-          return unless BetterErrors.logger
+          return unless ::BetterErrors.logger
 
           message = "\n#{@error_page.exception.class} - #{@error_page.exception.message}:\n"
           
           frames = @error_page.backtrace_frames # original definition
-          frames = frames.map(&:to_s).reject {|line| line =~ Tracee::IGNORE_RE}
-          frames = Tracee::Stack::BaseDecorator.(frames)
+          frames = frames.map(&:to_s).reject {|line| line =~ IGNORE_RE}
+          frames = Stack::BaseDecorator.(frames)
           frames.each do |frame|
             message << "  #{frame}\n"
           end
 
-          BetterErrors.logger.fatal message
+          ::BetterErrors.logger.fatal message
         end
         
       end

@@ -31,18 +31,20 @@ module Tracee
     # logger.error msg
     #   development.warn.log << msg
     #   development.error.log << msg
-    def write(msg, msg_level, log_level)
+    def write(msg, msg_level=nil, log_level=nil)
       case @target
-      when IO, StringIO then @target.write msg
-      when String then File.write @target, msg
+      when IO, StringIO then @target << msg
+      when String then File.open(@target, 'a') {|f| f << msg}
       when Hash # cascade
         Tracee::Logger::LEVEL_NAMES[log_level..msg_level].each do |name|
           if path = @target[name]
-            File.write path, msg
+            File.open(path, 'a') {|f| f << msg}
           end
         end
       end
     end
+    
+    alias << write
 
   end
     

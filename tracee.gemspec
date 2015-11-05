@@ -23,5 +23,4 @@ Gem::Specification.new do |spec|
   
   spec.add_dependency "colorize"
   spec.add_dependency "activesupport"
-  spec.add_dependency "rmtools"
 end

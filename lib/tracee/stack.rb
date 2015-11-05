@@ -30,7 +30,7 @@ module Tracee
     
     def self.readline(file, line)
       if lines = readlines(file)
-        (lines[line.to_i - 1] || "<line #{line} is not found> ").chop.green
+        (lines[line.to_i - 1] || "<line #{line} is not found> ").chomp.green
       end
     end
   

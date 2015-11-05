@@ -1,8 +1,11 @@
 describe Tracee::Logger do
   let(:o) {Tracee::Logger.new}
+  let(:now) {DateTime.parse '2015.01.01 00:00:00'}
+  
+  before {allow(DateTime).to receive(:now).and_return(now)}
 
   describe 'is initialized' do
-    let(:o2) {Tracee::Logger.new streams: [$stdout, '/path/to/logfile'], formatter: :abstract, log_level: :debug}
+    let(:o2) {Tracee::Logger.new streams: [$stdout, '/path/to/logfile'], formatter: :abstract, level: :debug}
     
     it 'with default stream' do
       expect(o.streams).to contain_exactly an_instance_of Tracee::Stream
@@ -37,7 +40,7 @@ describe Tracee::Logger do
     it 'accepts numbers' do
       initial = 1
       (0..5).each {|i|
-        expect {o.log_level = i}.to change {o.log_level}.from(initial).to(i)
+        expect {o.level = i}.to change {o.level}.from(initial).to(i)
         initial = i
       }
     end
@@ -45,7 +48,7 @@ describe Tracee::Logger do
     it 'accepts symbols' do
       initial = 1
       Tracee::Logger::LEVEL_NAMES.each_with_index {|name, i|
-        expect {o.log_level = name.to_sym}.to change {o.log_level}.from(initial).to(i)
+        expect {o.level = name.to_sym}.to change {o.level}.from(initial).to(i)
         initial = i
       }
     end
@@ -68,7 +71,7 @@ describe Tracee::Logger do
       
     it 'to a formatter' do
       # because it receives #call, actual #call would not be called
-      expect(o.formatters[0]).to receive(:call).with('hello', 'world', 'info', a_collection_containing_exactly(a_string_matching(/#{__FILE__}:#{__LINE__+1}/), a_string_matching(/example.rb/)))
+      expect(o.formatters[0]).to receive(:call).with('info', now, 'world', 'hello', a_collection_containing_exactly(a_string_matching(/#{__FILE__}:#{__LINE__+1}/), a_string_matching(/example.rb/)))
       o.info('world', caller_at: 0..1) {'hello'}
     end
     
@@ -81,6 +84,7 @@ describe Tracee::Logger do
   
   
   describe 'can do simple benchmarking' do
+    let(:o2) {Tracee::Logger.new level: :warn}
     
     it 'measures time between calls on any stack level with #tick' do
       allow(Time).to receive(:now).and_return(Time.at(0), Time.at(0.001), Time.at(0.1))
@@ -90,6 +94,10 @@ describe Tracee::Logger do
     it 'resets previous measurement with #tick!' do
       allow(Time).to receive(:now).and_return(Time.at(0), Time.at(0.001), Time.at(0.1), Time.at(0.5))
       expect {o.tick!; o.tick; o.tick! 'hello!'; o.tick}.to output(a_string_matching(/\[tick\] \n.+\[tick \+\S+0.\S+001\S+\] \n.+\[tick\] hello!\n.+\[tick \+\S+0.\S+4\S+\] \n/)).to_stdout
+    end
+    
+    it 'writes nothing if log level set is too high' do
+      expect {o2.tick!; o2.tick; o2.tick! 'hello!'; o2.tick}.to output('').to_stdout
     end
     
   end

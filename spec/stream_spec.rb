@@ -8,14 +8,14 @@ describe Tracee::Stream do
   after(:each) {Dir['*.log'].each {|log| FileUtils.rm log}}
     
   it 'when targeted to an IO, writes a message to it' do
-    expect {stdio.write 'hello', 0, 0}.to output('hello').to_stdout
-    fileio.write 'hello', 0, 0
-    fileio.target.close
+    expect {stdio.write 'hel'; stdio.write 'lo'}.to output('hello').to_stdout
+    
+    fileio.write 'hel'; fileio.write 'lo'; fileio.target.close
     expect(File.read 'stream.log').to eq 'hello'
   end
     
   it 'when targeted to a logfile path, writes a message to it' do
-    pathy.write 'hello', 0, 0
+    pathy.write 'hel'; pathy.write 'lo'
     expect(File.read 'stream.log').to eq 'hello'
   end
   
@@ -24,13 +24,13 @@ describe Tracee::Stream do
     
     it 'writes a message according to message\'s and logger\'s log level' do
       # message level, logger level
-      multipathy.write 'hello', Tracee::Logger::WARN, Tracee::Logger::DEBUG
-      expect([File.read('debug.log'), File.read('info.log')]).to eq ['hello', 'hello']
+      2.times {multipathy.write 'hi ', Tracee::Logger::WARN, Tracee::Logger::DEBUG}
+      expect([File.read('debug.log'), File.read('info.log')]).to eq ['hi hi ', 'hi hi ']
     end
     
-    it 'does not write a message anywhere if log_level is too high' do
+    it 'does not write a message anywhere if log_level is too high for defined paths' do
       # message level, logger level
-      multipathy.write 'hello', Tracee::Logger::DEBUG, Tracee::Logger::WARN
+      multipathy.write 'hi ', Tracee::Logger::DEBUG, Tracee::Logger::WARN
       expect([File.exists?('debug.log'), File.exists?('info.log')]).to eq [false, false]
     end
     
@@ -46,7 +46,7 @@ describe Tracee::Stream do
       expect(%w{debug info warn}.map {|level| File.read(level+'.log')}).to eq ['hello', 'hello', 'hello']
     end
     
-    it 'does not write a message anywhere if log_level is too high' do
+    it 'does not write a message anywhere if log_level is too high for defined paths' do
       # message level, logger level
       cascade.write 'hello', Tracee::Logger::ERROR, Tracee::Logger::WARN
       expect(%w{debug info fatal}.map {|level| File.exists?(level+'.log')}).to eq [false, false, false]

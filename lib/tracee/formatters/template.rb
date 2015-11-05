@@ -62,13 +62,11 @@ module Tracee
       end
       
       
-      def call(msg, progname, msg_level, caller_slice)
+      def call(msg_level, datetime, progname, msg, caller_slice=[])
         result = @summary.dup
         
         if @references.include? 'datetime'
-          now = DateTime.now
-          datetime = now.strftime(@datetime || '%FT%T%Z')
-          result.sub! '%{datetime}', datetime
+          result.sub! '%{datetime}', datetime.strftime(@datetime || '%FT%T%Z')
         end
         
         if @references.include? 'level' or @references.include? 'level_letter'

@@ -12,10 +12,10 @@ module Tracee
     LEVEL_NAMES = LEVELS.map(&:downcase).freeze
     
     
-    attr_reader :log_level, :formatters, :streams
+    attr_reader :level, :formatters, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatter: {:template => :tracee}, formatters: nil, log_level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:template => :tracee}, formatters: nil, level: :info)
       @streams = []
       streams ||= [stream]
       streams.each {|item| add_stream item}
@@ -30,7 +30,7 @@ module Tracee
         end
       }
       
-      self.log_level = log_level
+      self.level = level
       read_log_level_from_env
     end
     
@@ -41,10 +41,19 @@ module Tracee
       elsif block
         @formatters << block
       elsif callable_or_symbol.respond_to? :call
-        @formatters << callable
+        @formatters << callable_or_symbol
       else
         raise TypeError, 'A formatter must respond to #call'
       end
+    end
+    
+    def formatter=(callable)
+      add_formatter callable
+      @formatters = [@formatters[-1]]
+    end
+    
+    def formatter
+      @formatters[0]
     end
     
     def add_stream(target)
@@ -56,14 +65,18 @@ module Tracee
       end
     end
     
-    def log_level=(level)
-      @log_level = level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
+    def level=(level)
+      @level = level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
     end
     
+    alias log_level= level=
+    alias log_level level
     
-    def write(msg, progname, level, level_int, caller_slice)
+    
+    def write(msg, progname, level, level_int, caller_slice=[])
+      now = DateTime.now
       @formatters.each do |formatter|
-        msg = formatter.(msg, progname, level, caller_slice)
+        msg = formatter.(level, now, progname, msg, caller_slice)
       end
       @streams.each do |stream|
         stream.write msg, level_int, log_level
@@ -78,7 +91,7 @@ module Tracee
     
       class_eval <<-EOS, __FILE__, __LINE__+1
         def #{level_name}(msg_or_progname=nil, caller_at: 0, &block)
-          return if @log_level > #{level_int}
+          return if @level > #{level_int}
           
           if should_process_caller?
             caller = caller(1)
@@ -100,11 +113,10 @@ module Tracee
         end
         
         def #{level_name}?
-          @log_level <= #{level_int}
+          @level <= #{level_int}
         end
       EOS
     end
-    
     
     alias <= debug
     alias << info

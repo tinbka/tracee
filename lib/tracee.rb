@@ -8,6 +8,7 @@ require 'active_support/inflector'
 require 'active_support/core_ext/hash/indifferent_access'
 require 'active_support/core_ext/module/aliasing'
 require 'active_support/core_ext/class/attribute'
+require 'active_support/tagged_logging'
 
 require 'colorize'
 
@@ -38,17 +39,25 @@ module Tracee
       
       
   class ::Exception
-    include Extensions::Exception
+    include Tracee::Extensions::Exception
+  end
+  
+  module ::ActiveSupport::TaggedLogging::Formatter
+    include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
   
   ## Rails usage
   # Add to initializers:
   #
   # unless Rails.env.production?
-  #   Tracee.decorate_stack_everywhere
+  #   Tracee.decorate_better_errors_stack # if you're using better_errors
+  #   Tracee.decorate_active_support_stack # otherwise
   # end
   #
   # Because these decorations may slightly slowdown an application, they're not run automatically.
+  #
+  # Use `Tracee.decorate_stack_everywhere` only within a console, because it significantly slowdown rails middleware.
+  # So better put it into .irbrc or similar.
   ##
   class << self
     
