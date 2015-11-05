@@ -1,6 +1,6 @@
 module Tracee
   module Formatters
-    class Template < Base
+    class Template < Abstract
       COLORED_LEVELS = {
         'debug' => 'DEBUG'.white,
         'info' => 'INFO'.light_cyan,
@@ -28,79 +28,78 @@ module Tracee
         
         plain: "%{message}",
         
-        none: ""
+        empty: ""
       }.freeze
       
       TEMPLATE_KEYS = %w{datetime level level_letter pid progname caller message}.freeze
       CALLER_KEYS = %W{path file line method}.freeze
+          
+      attr_reader :summary, :caller, :datetime, :level
       
-      CALLER_RE = \
-        %r{^(.*?([^/\\]+?))#{	    # ( path ( file ) ) 
-          }:(\d+)(?::in #{	      # :( line )[ :in
-          }`(block (?:\((\d+) levels\) )?in )?(.+?)'#{   # `( [ block in ] closure )' ]
-          })?$}
       
       # available template keys : datetime, level, level_letter, pid, thread_id, progname, caller, message
       # available caller keys : path, file, line, method
-      # template : {
+      # params : {
       #    summary: <string containing available template keys as interpolation marks>,
       #    datetime: <format available to DateTime#strftime>,   # optional
       #    level: {<severity level name> => <label string>, ... },   # optional
       #    caller: <string containing available caller keys as interpolation marks>   # required if summary refers caller
       #  } 
-      def template=(string_or_key)
-        if string_or_key.is_a? Symbol
-          template = TEMPLATES[string_or_key]
+      def initialize(params_or_key)
+        if params_or_key.is_a? Symbol
+          params = TEMPLATES[params_or_key]
         end
-        if template.is_a? String
-          template = {summary: template}
+        if params.is_a? String
+          params = {summary: params}
         end
         
-        @template_references = TEMPLATE_KEYS.select do |key|
-          template[:summary]["%{#{key}}"]
-        end.to_set
-        @template = template
+        unless params.is_a? Hash
+          raise TypeError, 'params must be a Hash or a reference to one of Tracee::Formatters::Template::TEMPLATES'
+        end
+        
+        @summary, @caller, @datetime, @level = params.values_at(:summary, :caller, :datetime, :level).map &:freeze
+        @references = TEMPLATE_KEYS.select {|key| @summary["%{#{key}}"]}.to_set
       end
       
       
       def call(msg, progname, msg_level, caller_slice)
-        result = @template[:summary].dup
+        result = @summary.dup
         
-        if @template_references.include? 'datetime'
+        if @references.include? 'datetime'
           now = DateTime.now
-          datetime = now.strftime(@template[:datetime] || '%FT%T%Z')
+          datetime = now.strftime(@datetime || '%FT%T%Z')
           result.sub! '%{datetime}', datetime
         end
         
-        if @template_references.include? 'level' or @template_references.include? 'level_letter'
-          level = @template[:level][msg_level] || msg_level
+        if @references.include? 'level' or @references.include? 'level_letter'
+          level = @level[msg_level] || msg_level
           result.sub! '%{level}', level
           result.sub! '%{level_letter}', level[0]
         end
         
-        if @template_references.include? 'pid'
-          result.sub! '%{pid}', Process.pid
+        if @references.include? 'pid'
+          result.sub! '%{pid}', Process.pid.to_s
         end
         
-        if @template_references.include? 'thread_id'
+        if @references.include? 'thread_id'
           result.sub! '%{thread_id}', Thread.current.object_id
         end
         
-        if @template_references.include? 'progname'
+        if @references.include? 'progname'
           result.sub! '%{progname}', progname
         end
         
-        if @template_references.include? 'caller'
+        if @references.include? 'caller'
           caller_slice = caller_slice.map {|line|
             path, file, line, is_block, block_level, method = line.match(CALLER_RE)[1..-1]
             block_level ||= is_block && '1'
             method = "#{method} {#{block_level}}" if block_level
-            @template[:caller] % {path: path, file: file, line: line, method: method}
+            @caller % {path: path, file: file, line: line, method: method}
           } * ' -> '
           result.sub! '%{caller}', caller_slice
         end
         
-        if @template_references.include? 'message'
+        if @references.include? 'message'
           if msg.nil?
             msg = "\b\b"
           elsif !msg.is_a?(String)
@@ -110,6 +109,16 @@ module Tracee
         end
         
         return result + "\n"
+      end
+      
+      
+      def should_process_caller?
+        @references.include? 'caller'
+      end
+      
+      
+      def inspect
+        %{#{to_s.chop} "#{@summary.sub('%{datetime}', DateTime.parse('2000-10-20 11:22:33.123456789').strftime(@datetime)).sub('%{level}', "{#{@level.values*', '}}").sub('%{level_letter}', "{#{@level.values.map {|w| w[0]}*', '}}").sub('%{caller}', @caller.to_s)}">}
       end
       
     end

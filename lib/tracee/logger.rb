@@ -15,27 +15,32 @@ module Tracee
     attr_reader :log_level, :formatters, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatters: nil, template: :tracee, log_level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:template => :tracee}, formatters: nil, log_level: :info)
       @streams = []
-      streams = streams || [stream]
+      streams ||= [stream]
       streams.each {|item| add_stream item}
       
       @formatters = []
-      if formatters.nil?
-        formatters = [Tracee::Formatters::Template]
-        formatters[0].template = template
-      end
-      formatters.each {|item| add_formatter item}
+      formatters ||= [formatter]
+      formatters.each {|item|
+        if item.is_a? Hash
+          add_formatter *item.to_a.flatten
+        else
+          add_formatter item
+        end
+      }
       
       self.log_level = log_level
       read_log_level_from_env
     end
     
     
-    def add_formatter(callable=nil, &block)
-      if block
+    def add_formatter(callable_or_symbol=nil, *formatter_params, &block)
+      if callable_or_symbol.is_a? Symbol
+        @formatters << Tracee::Formatters.const_get(callable_or_symbol.to_s.classify).new(*formatter_params)
+      elsif block
         @formatters << block
-      elsif callable.respond_to? :call
+      elsif callable_or_symbol.respond_to? :call
         @formatters << callable
       else
         raise TypeError, 'A formatter must respond to #call'
@@ -43,22 +48,11 @@ module Tracee
     end
     
     def add_stream(target)
-      if target.is_a? Hash or target.is_a? String or target.is_a? IO
+      case target
+      when Hash, String, IO, StringIO
         @streams << Stream.new(target)
       else
         raise TypeError, 'A target must be IO | String | {<level name> => <level log file path>, ... } | {:cascade => <level log file path pattern with "level" key>}'
-      end
-    end
-    
-    private def read_log_level_from_env
-      if ENV['LOG_LEVEL'] and LEVELS.include? ENV['LOG_LEVEL']
-        self.log_level = ENV['LOG_LEVEL']
-      elsif ENV['DEBUG'] || ENV['VERBOSE']
-        self.log_level = 'DEBUG'
-      elsif ENV['WARN'] || ENV['QUIET']
-        self.log_level = 'WARN'
-      elsif ENV['SILENT']
-        self.log_level = 'ERROR'
       end
     end
     
@@ -82,16 +76,16 @@ module Tracee
     
       level_name = level.downcase
     
-      class_eval <<-EOS, __FILE__, __LINE__
+      class_eval <<-EOS, __FILE__, __LINE__+1
         def #{level_name}(msg_or_progname=nil, caller_at: 0, &block)
           return if @log_level > #{level_int}
           
-          if @template_references.include? 'caller'
+          if should_process_caller?
             caller = caller(1)
             if caller_at.is_a? Array
               caller_slice = caller_at.map! {|i| caller[i]}
             else
-              caller_slice = Array.wrap caller[caller_at]
+              caller_slice = [*caller[caller_at]]
             end
           end
           
@@ -109,6 +103,59 @@ module Tracee
           @log_level <= #{level_int}
         end
       EOS
+    end
+    
+    
+    alias <= debug
+    alias << info
+    alias < warn
+    
+    
+    def benchmark(times: 1, &block)
+      before_proc = Time.now
+      (times - 1).times {yield}
+      result = yield
+      now = Time.now
+      tick "[#{highlight_time_diff((now - before_proc)*1000/times)}ms each] #{result}", caller_offset: 1
+    end
+    
+    def tick(msg='', caller_offset: 0)
+      now = Time.now
+      if prev = Thread.current[:tracee_checkpoint]
+        info "[tick +#{highlight_time_diff(now - prev)}] #{msg}", caller_at: caller_offset+1
+      else
+        info "[tick] #{msg}", caller_at: caller_offset+1
+      end
+      Thread.current[:tracee_checkpoint] = now
+    end
+    
+    def tick!(msg='', caller_offset: 0)
+      Thread.current[:tracee_checkpoint] = nil
+      tick msg, caller_offset: caller_offset+1
+    end
+    
+    
+    private
+    
+    def highlight_time_diff(diff)
+      diff.round(6).to_s.sub(/(\d+)\.(\d{0,3})(\d*)$/) {|m| "#$1.".light_white + $2.white + $3.light_black}
+    end
+    
+    
+    def read_log_level_from_env
+      if ENV['LOG_LEVEL'] and LEVELS.include? ENV['LOG_LEVEL']
+        self.log_level = ENV['LOG_LEVEL']
+      elsif ENV['DEBUG'] || ENV['VERBOSE']
+        self.log_level = 'DEBUG'
+      elsif ENV['WARN'] || ENV['QUIET']
+        self.log_level = 'WARN'
+      elsif ENV['SILENT']
+        self.log_level = 'ERROR'
+      end
+    end
+    
+    def should_process_caller?
+      @formatters.any? &:should_process_caller?
     end
     
   end
