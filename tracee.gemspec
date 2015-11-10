@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Sergey Baev"]
   spec.email         = ["tinbka@gmail.com"]
 
-  spec.summary       = %q{Fancy logger to trace all the depths of the code}
-  spec.description   = %q{Tracee is a simple Rails-compatible logger meant for development enriched with stack tracing, benchmarking, log-level based output splitting and formatting.}
+  spec.summary       = %q{An extensible logger with stack tracing, benchmarking, preprocessing, and severity-based output splitting}
+  spec.description   = %q{Tracee is a simple extensible logger with stack tracing, benchmarking, preprocessing, and severity-based output splitting. Tracee is meant for development and debugging of any type of application or library, and compatible with Rails. The main reason of its existence is to help you see through a stack.}
   spec.homepage      = "https://github.com/tinbka/tracee"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
