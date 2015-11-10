@@ -1,13 +1,13 @@
 module Tracee
-  module Formatters
-    class Abstract
+  module Preprocessors
+    class Base
       
       def call(msg_level, datetime, progname, msg, caller_slice=[])
         msg
       end
       
-      def should_process_caller?
-        false
+      def halt!
+        throw :halt
       end
       
     end

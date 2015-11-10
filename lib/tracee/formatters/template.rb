@@ -1,6 +1,6 @@
 module Tracee
   module Formatters
-    class Template < Abstract
+    class Template < Base
       COLORED_LEVELS = {
         'debug' => 'DEBUG'.white,
         'info' => 'INFO'.light_cyan,
@@ -88,7 +88,7 @@ module Tracee
         end
         
         if @references.include? 'caller'
-          caller_slice = caller_slice.map {|line|
+          caller_slice = caller_slice.reverse.map {|line|
             path, file, line, is_block, block_level, method = line.match(CALLER_RE)[1..-1]
             block_level ||= is_block && '1'
             method = "#{method} {#{block_level}}" if block_level
@@ -116,7 +116,18 @@ module Tracee
       
       
       def inspect
-        %{#{to_s.chop} "#{@summary.sub('%{datetime}', DateTime.parse('2000-10-20 11:22:33.123456789').strftime(@datetime)).sub('%{level}', "{#{@level.values*', '}}").sub('%{level_letter}', "{#{@level.values.map {|w| w[0]}*', '}}").sub('%{caller}', @caller.to_s)}">}
+        summary = @summary.dup
+        if @datetime
+          summary.sub!('%{datetime}', DateTime.parse('2000-10-20 11:22:33.123456789').strftime(@datetime))
+        end
+        if @level
+          summary.sub!('%{level}', "{#{@level.values*', '}}")
+          summary.sub!('%{level_letter}', "{#{@level.values.map {|w| w[0]}*', '}}")
+        end
+        if @caller
+          summary.sub!('%{caller}', @caller.to_s)
+        end
+        %{#{to_s.chop} "#{summary}">}
       end
       
     end

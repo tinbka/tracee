@@ -12,21 +12,27 @@ module Tracee
     LEVEL_NAMES = LEVELS.map(&:downcase).freeze
     
     
-    attr_reader :level, :formatters, :streams
+    attr_reader :level, :preprocessors, :formatter, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatter: {:template => :tracee}, formatters: nil, level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:template => :tracee}, preprocessors: [], level: :info)
       @streams = []
       streams ||= [stream]
       streams.each {|item| add_stream item}
       
-      @formatters = []
-      formatters ||= [formatter]
-      formatters.each {|item|
+      if formatter.is_a? Hash
+        # `formatter=' can't accept *array
+        set_formatter *formatter.to_a.flatten
+      else
+        self.formatter = formatter
+      end
+      
+      @preprocessors = []
+      preprocessors.each {|item|
         if item.is_a? Hash
-          add_formatter *item.to_a.flatten
+          add_preprocessor *item.to_a.flatten
         else
-          add_formatter item
+          add_preprocessor item
         end
       }
       
@@ -35,26 +41,28 @@ module Tracee
     end
     
     
-    def add_formatter(callable_or_symbol=nil, *formatter_params, &block)
+    def add_preprocessor(callable_or_symbol=nil, *preprocessor_params)
       if callable_or_symbol.is_a? Symbol
-        @formatters << Tracee::Formatters.const_get(callable_or_symbol.to_s.classify).new(*formatter_params)
-      elsif block
-        @formatters << block
+        @preprocessors << Tracee::Preprocessors.const_get(callable_or_symbol.to_s.classify).new(*preprocessor_params)
       elsif callable_or_symbol.respond_to? :call
-        @formatters << callable_or_symbol
+        @preprocessors << callable_or_symbol
+      else
+        raise TypeError, 'A preprocessor must respond to #call'
+      end
+    end
+    
+    def set_formatter(callable_or_symbol=nil, *formatter_params)
+      if callable_or_symbol.is_a? Symbol
+        @formatter = Tracee::Formatters.const_get(callable_or_symbol.to_s.classify).new(*formatter_params)
+      elsif callable_or_symbol.respond_to? :call
+        @formatters = callable_or_symbol
       else
         raise TypeError, 'A formatter must respond to #call'
       end
     end
+    alias formatter= set_formatter
     
-    def formatter=(callable)
-      add_formatter callable
-      @formatters = [@formatters[-1]]
-    end
-    
-    def formatter
-      @formatters[0]
-    end
+    delegate :should_process_caller?, to: :formatter
     
     def add_stream(target)
       case target
@@ -64,6 +72,7 @@ module Tracee
         raise TypeError, 'A target must be IO | String | {<level name> => <level log file path>, ... } | {:cascade => <level log file path pattern with "level" key>}'
       end
     end
+    
     
     def level=(level)
       @level = level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
@@ -75,11 +84,17 @@ module Tracee
     
     def write(msg, progname, level, level_int, caller_slice=[])
       now = DateTime.now
-      @formatters.each do |formatter|
-        msg = formatter.(level, now, progname, msg, caller_slice)
-      end
-      @streams.each do |stream|
-        stream.write msg, level_int, log_level
+      
+      catch :halt do
+        @preprocessors.each do |preprocessor|
+          msg = preprocessor.(level, now, progname, msg, caller_slice)
+        end
+        
+        msg = @formatter.(level, now, progname, msg, caller_slice)
+        
+        @streams.each do |stream|
+          stream.write msg, level_int, log_level
+        end
       end
       nil
     end
@@ -90,23 +105,29 @@ module Tracee
       level_name = level.downcase
     
       class_eval <<-EOS, __FILE__, __LINE__+1
-        def #{level_name}(msg_or_progname=nil, caller_at: 0, &block)
+        def #{level_name}(*args, &block)
           return if @level > #{level_int}
+          
+          if block
+            msg = block.()
+            if args[0].is_a? Hash
+              caller_at = args[0][:caller_at] || 0
+            else
+              progname = args[0].to_s
+            end
+          else
+            msg = args[0]
+          end
           
           if should_process_caller?
             caller = caller(1)
+            
+            caller_at ||= (args[1] || {})[:caller_at] || 0
             if caller_at.is_a? Array
               caller_slice = caller_at.map! {|i| caller[i]}
             else
               caller_slice = [*caller[caller_at]]
             end
-          end
-          
-          if block
-            msg = block.()
-            progname = msg_or_progname
-          else
-            msg = msg_or_progname
           end
             
           write msg, progname, '#{level_name}', #{level_int}, caller_slice
@@ -164,10 +185,6 @@ module Tracee
       elsif ENV['SILENT']
         self.log_level = 'ERROR'
       end
-    end
-    
-    def should_process_caller?
-      @formatters.any? &:should_process_caller?
     end
     
   end

@@ -14,8 +14,10 @@ require 'colorize'
 
 require 'tracee/version'
 require 'tracee/logger'
-require 'tracee/formatters/abstract'
+require 'tracee/formatters/base'
 require 'tracee/formatters/template'
+require 'tracee/preprocessors/base'
+require 'tracee/preprocessors/quiet_assets'
 require 'tracee/stream'
 require 'tracee/stack'
 require 'tracee/ext/exception'
@@ -31,19 +33,16 @@ module Tracee
       
   IGNORE_RE = \
     %r{/irb(/|\.rb$)#{ # irb internals
-      }|/active_support/dependencies.rb$#{ # everywhere-proxy
+      }|lib/active_support/dependencies.rb$#{ # everywhere-proxy
       }|^-e:#{ # ruby -e oneliner
       }|^(script|bin)/#{ # other common entry points
-      }|/gems/bundler-\d|ruby-\d.\d.\d(@[^/]+)?/bin/#{ # running from bundle console
+      }|/gems/bundler-\d|ruby-\d.\d.\d(@[^/]+)?/bin/#{ # bundle console
+      }|lib/rails/commands(/|\.rb$)#{ # rails console
       }}
       
       
   class ::Exception
     include Tracee::Extensions::Exception
-  end
-  
-  module ::ActiveSupport::TaggedLogging::Formatter
-    include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
   
   ## Rails usage

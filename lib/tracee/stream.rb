@@ -32,6 +32,8 @@ module Tracee
     #   development.warn.log << msg
     #   development.error.log << msg
     def write(msg, msg_level=nil, log_level=nil)
+      return if msg.nil?
+      
       case @target
       when IO, StringIO then @target << msg
       when String then File.open(@target, 'a') {|f| f << msg}

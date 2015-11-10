@@ -21,7 +21,7 @@ describe Tracee::Formatters::Template do
   describe 'as tracee' do
   
     it 'renders a tracee template containing time, log level, caller and message' do
-      expect(tracee.('info', now, 'world', 'hello', caller(0)[0..1])).to match(/00:00:00.000 \S+INFO\S+ \[\S+#{File.basename __FILE__}:#{__LINE__}\S+ .+ -> \S+:\S+ .+\]: hello/)
+      expect(tracee.('info', now, 'world', 'hello', caller(0)[0..1])).to match(/00:00:00.000 \S+INFO\S+ \[\S+:\S+ .+ -> \S+#{File.basename __FILE__}:#{__LINE__}\S+ .+\]: hello/)
     end
   
   end
