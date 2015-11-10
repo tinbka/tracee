@@ -14,4 +14,8 @@ describe Tracee::Preprocessors::QuietAssets do
     expect {alt.('info', now, nil, 'Started GET "/alt_assets" blah-blah-blah')}.to_not throw_symbol :halt
   end
   
+  it 'returns the message otherwise' do
+    expect(default.('info', now, nil, 'hello', caller[0..1])).to eq 'hello'
+  end
+  
 end

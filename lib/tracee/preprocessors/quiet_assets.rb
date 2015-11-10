@@ -15,6 +15,8 @@ module Tracee
       def call(msg_level, datetime, progname, msg, caller_slice=[])
         if msg =~ %r{^Started GET "/(#@assets_paths_pattern)/}
           halt!
+        else
+          msg
         end
       end
 
