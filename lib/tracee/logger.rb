@@ -43,7 +43,7 @@ module Tracee
     
     def add_preprocessor(callable_or_symbol=nil, *preprocessor_params)
       if callable_or_symbol.is_a? Symbol
-        @preprocessors << Tracee::Preprocessors.const_get(callable_or_symbol.to_s.classify).new(*preprocessor_params)
+        @preprocessors << Tracee::Preprocessors.const_get(callable_or_symbol.to_s.camelize).new(*preprocessor_params)
       elsif callable_or_symbol.respond_to? :call
         @preprocessors << callable_or_symbol
       else
@@ -53,7 +53,7 @@ module Tracee
     
     def set_formatter(callable_or_symbol=nil, *formatter_params)
       if callable_or_symbol.is_a? Symbol
-        @formatter = Tracee::Formatters.const_get(callable_or_symbol.to_s.classify).new(*formatter_params)
+        @formatter = Tracee::Formatters.const_get(callable_or_symbol.to_s.camelize).new(*formatter_params)
       elsif callable_or_symbol.respond_to? :call
         @formatters = callable_or_symbol
       else

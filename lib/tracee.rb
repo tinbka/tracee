@@ -45,6 +45,10 @@ module Tracee
     include Tracee::Extensions::Exception
   end
   
+  module ::ActiveSupport::TaggedLogging::Formatter
+    include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
+  end
+  
   ## Rails usage
   # Add to initializers:
   #

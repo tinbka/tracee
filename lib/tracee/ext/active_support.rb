@@ -17,6 +17,23 @@ module Tracee
         end
           
       end
+      
+      module TaggedLogging
+        module Formatter
+          extend ::ActiveSupport::Concern
+          
+          # Totally redefine, so that Tracee::Logger would not have to check #call arity on every write
+          included do
+            if self < Tracee::Formatters::Base
+              def call(severity, timestamp, progname, msg, caller_slice=[])
+                super(severity, timestamp, progname, "#{tags_text}#{msg}", caller_slice)
+              end
+            end
+          end
+          
+        end
+      end
+          
         
     end
   end

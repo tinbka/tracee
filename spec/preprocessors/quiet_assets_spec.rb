@@ -3,7 +3,7 @@ describe Tracee::Preprocessors::QuietAssets do
   let(:alt) {Tracee::Preprocessors::QuietAssets.new ['assets', 'alt_assets']}
   let(:now) {DateTime.parse '2015.01.01 00:00:00'}
   
-  it 'halts a preprocessor chain when message matches assets path pattern' do
+  it 'halts a preprocessor chain when a message matches an assets path pattern' do
     expect {default.('info', now, nil, 'Started GET "/assets/jquery.js" blah-blah-blah')}.to throw_symbol :halt
     expect {default.('info', now, nil, 'Started GET "/assets')}.to_not throw_symbol anything
     
