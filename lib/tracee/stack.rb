@@ -2,16 +2,20 @@ require 'tracee/stack/base_decorator'
 
 module Tracee
   module Stack
-    mattr_accessor :reload_script_lines
     SCRIPT_LINES_MTIMES = {}
     
-    # Note that Rails' autoreload of code doesn't rewrite SCRIPT_LINES__,
+    # Rails' autoreload of code doesn't rewrite SCRIPT_LINES__,
     # to perform that automatically, Tracee::Stack.reload_script_lines should be turned on.
+    # This mattr is left writable mostly for debug purposes.
+    mattr_accessor :reload_script_lines
+    self.reload_script_lines = true
+    
     def self.readlines(file)
       if reload_script_lines
         if File.exists?(file)
           mtime = File.mtime(file)
-          if SCRIPT_LINES_MTIMES[file] < File.mtime(file)
+          unless SCRIPT_LINES_MTIMES[file] and SCRIPT_LINES_MTIMES[file] >= mtime
+            SCRIPT_LINES_MTIMES[file] = mtime
             SCRIPT_LINES__[file] = IO.readlines(file)
           end
           SCRIPT_LINES__[file]

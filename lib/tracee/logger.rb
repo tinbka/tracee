@@ -11,6 +11,8 @@ module Tracee
     ].freeze
     LEVEL_NAMES = LEVELS.map(&:downcase).freeze
     
+    include Tracee::Benchmarkable
+    
     
     attr_reader :level, :preprocessors, :formatter, :streams
     
@@ -65,14 +67,8 @@ module Tracee
     delegate :should_process_caller?, to: :formatter
     
     def add_stream(target)
-      case target
-      when Hash, String, IO, StringIO
-        @streams << Stream.new(target)
-      else
-        raise TypeError, 'A target must be IO | String | {<level name> => <level log file path>, ... } | {:cascade => <level log file path pattern with "level" key>}'
-      end
+      @streams << Stream.new(target)
     end
-    
     
     def level=(level)
       @level = level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
@@ -144,36 +140,7 @@ module Tracee
     alias < warn
     
     
-    def benchmark(times: 1, &block)
-      before_proc = Time.now
-      (times - 1).times {yield}
-      result = yield
-      now = Time.now
-      tick "[#{highlight_time_diff((now - before_proc)*1000/times)}ms each] #{result}", caller_offset: 1
-    end
-    
-    def tick(msg='', caller_offset: 0)
-      now = Time.now
-      if prev = Thread.current[:tracee_checkpoint]
-        info "[tick +#{highlight_time_diff(now - prev)}] #{msg}", caller_at: caller_offset+1
-      else
-        info "[tick] #{msg}", caller_at: caller_offset+1
-      end
-      Thread.current[:tracee_checkpoint] = now
-    end
-    
-    def tick!(msg='', caller_offset: 0)
-      Thread.current[:tracee_checkpoint] = nil
-      tick msg, caller_offset: caller_offset+1
-    end
-    
-    
     private
-    
-    def highlight_time_diff(diff)
-      diff.round(6).to_s.sub(/(\d+)\.(\d{0,3})(\d*)$/) {|m| "#$1.".light_white + $2.white + $3.light_black}
-    end
-    
     
     def read_log_level_from_env
       if ENV['LOG_LEVEL'] and LEVELS.include? ENV['LOG_LEVEL']

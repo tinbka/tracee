@@ -2,7 +2,7 @@ describe Tracee::Stream do
   let(:stdio) {Tracee::Stream.new $stdout}
   let(:fileio) {Tracee::Stream.new File.open('stream.log', 'a')}
   let(:pathy) {Tracee::Stream.new 'stream.log'}
-  let(:multipathy) {Tracee::Stream.new debug: 'debug.log', info: 'info.log'}
+  let(:multiio) {Tracee::Stream.new debug: 'debug.log', info: 'info.log', warn: $stderr, error: File.open('error.log', 'a')}
   let(:cascade) {Tracee::Stream.new cascade: '%{level}.log'}
   
   after(:each) {Dir['*.log'].each {|log| FileUtils.rm log}}
@@ -20,18 +20,26 @@ describe Tracee::Stream do
   end
   
   
-  describe 'when targeted to a multiple paths' do
+  describe 'when targeted to a multiple paths and IOs' do
     
     it 'writes a message according to message\'s and logger\'s log level' do
       # message level, logger level
-      2.times {multipathy.write 'hi ', Tracee::Logger::WARN, Tracee::Logger::DEBUG}
-      expect([File.read('debug.log'), File.read('info.log')]).to eq ['hi hi ', 'hi hi ']
+      expect {
+        2.times {multiio.write 'hi ', Tracee::Logger::ERROR, Tracee::Logger::DEBUG}
+        multiio.target[:error].close
+      }.to output('hi hi ').to_stderr
+      
+      expect([File.read('debug.log'), File.read('info.log'), File.read('error.log')]).to eq ['hi hi ', 'hi hi ', 'hi hi ']
     end
     
-    it 'does not write a message anywhere if log_level is too high for defined paths' do
+    it 'does not write a message anywhere if log_level is too high for defined targets' do
       # message level, logger level
-      multipathy.write 'hi ', Tracee::Logger::DEBUG, Tracee::Logger::WARN
-      expect([File.exists?('debug.log'), File.exists?('info.log')]).to eq [false, false]
+      expect {
+        multiio.write 'hi ', Tracee::Logger::DEBUG, Tracee::Logger::WARN
+        multiio.target[:error].close
+      }.to output('').to_stderr
+      
+      expect([File.exists?('debug.log'), File.exists?('info.log'), File.read('error.log')]).to eq [false, false, '']
     end
     
   end

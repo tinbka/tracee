@@ -2,11 +2,17 @@ module Tracee
   
   class Stream
     attr_reader :target
+    
+    class TargetError < TypeError
+      def initialize(message='A target must be IO | String | {<level name> => <level log file path or IO>, ... } | {:cascade => <level log file path pattern with "level" key>}', *) super end
+    end
       
     # @ target : IO | String | {<level name> => < level log file path >, ... } | {:cascade => < level log file path pattern >}
     # pattern example : "log/development.%{level}.log"
     def initialize(target)
       if target.is_a? Hash
+        raise TargetError if target.values.any? {|val| !( val.is_a? String or val.is_a? IO or val.is_a? StringIO )}
+        
         if pattern = target[:cascade]
           target = Tracee::Logger::LEVEL_NAMES.map {|name|
             [name, pattern % {level: name}]
@@ -14,6 +20,9 @@ module Tracee
         else
           target = target.with_indifferent_access
         end
+      
+      else
+        raise TargetError unless target.is_a? String or target.is_a? IO or target.is_a? StringIO
       end
 
       @target = target
@@ -35,18 +44,27 @@ module Tracee
       return if msg.nil?
       
       case @target
-      when IO, StringIO then @target << msg
-      when String then File.open(@target, 'a') {|f| f << msg}
       when Hash # cascade
         Tracee::Logger::LEVEL_NAMES[log_level..msg_level].each do |name|
-          if path = @target[name]
-            File.open(path, 'a') {|f| f << msg}
+          if target = @target[name]
+            io_write target, msg
           end
         end
+      else
+        io_write @target, msg
       end
     end
     
     alias << write
+    
+    private
+    
+    def io_write(target, msg)
+      case target
+      when IO, StringIO then target << msg
+      when String then File.open(target, 'a') {|f| f << msg}
+      end
+    end
 
   end
     

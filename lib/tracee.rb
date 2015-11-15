@@ -13,6 +13,7 @@ require 'active_support/tagged_logging'
 require 'colorize'
 
 require 'tracee/version'
+require 'tracee/benchmarkable'
 require 'tracee/logger'
 require 'tracee/formatters/base'
 require 'tracee/formatters/template'
