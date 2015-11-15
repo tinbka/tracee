@@ -26,7 +26,7 @@ module Tracee
           # We do it so that Tracee::Logger would not have to care about an arity of corresponding #call or whatever.
           included do
             def self.extended(a_formatter_to_apply_tagging_on)
-              if a_formatter_to_apply_tagging_on.is_a? Tracee::Formatters::Base
+              if a_formatter_to_apply_tagging_on.is_a? Tracee::Preprocessors::Base
                 a_formatter_to_apply_tagging_on.instance_variable_set\
                   :@original_call,
                   a_formatter_to_apply_tagging_on.class

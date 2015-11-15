@@ -1,6 +1,6 @@
-describe Tracee::Formatters::Template do
+describe Tracee::Preprocessors::Formatter do
   [:tracee, :logger_formatter, :plain, :empty].each do |template|
-    let(template) {Tracee::Formatters::Template.new template}
+    let(template) {Tracee::Preprocessors::Formatter.new template}
   end
   
   let(:now) {DateTime.parse '2015.01.01 00:00:00'}

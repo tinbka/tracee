@@ -1,6 +1,6 @@
 module Tracee
-  module Formatters
-    class Template < Base
+  module Preprocessors
+    class Formatter < Base
       COLORED_LEVELS = {
         'debug' => 'DEBUG'.white,
         'info' => 'INFO'.light_cyan,

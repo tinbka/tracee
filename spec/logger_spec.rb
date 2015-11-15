@@ -15,7 +15,7 @@ describe Tracee::Logger do
     end
     
     it 'with default formatter' do
-      expect(o.formatter).to be_an_instance_of Tracee::Formatters::Template
+      expect(o.formatter).to be_an_instance_of Tracee::Preprocessors::Formatter
     end
     
     it 'with default log level' do
@@ -27,7 +27,7 @@ describe Tracee::Logger do
     end
     
     it 'with custom formatter' do
-      expect(o2.formatter).to be_an_instance_of Tracee::Formatters::Base
+      expect(o2.formatter).to be_an_instance_of Tracee::Preprocessors::Base
     end
     
     it 'with custom preprocessor chain' do
