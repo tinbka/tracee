@@ -25,14 +25,15 @@ describe Tracee::Stream do
     it 'writes a message according to message\'s and logger\'s log level' do
       # message level, logger level
       expect {
-        2.times {multiio.write 'hi ', Tracee::Logger::ERROR, Tracee::Logger::DEBUG}
+        multiio.write 'hi ', Tracee::Logger::ERROR, Tracee::Logger::DEBUG
+        multiio.write 'hi ', Tracee::Logger::INFO, Tracee::Logger::DEBUG
         multiio.target[:error].close
-      }.to output('hi hi ').to_stderr
+      }.to output('hi ').to_stderr
       
-      expect([File.read('debug.log'), File.read('info.log'), File.read('error.log')]).to eq ['hi hi ', 'hi hi ', 'hi hi ']
+      expect([File.read('debug.log'), File.read('info.log'), File.read('error.log')]).to eq ['hi hi ', 'hi hi ', 'hi ']
     end
     
-    it 'does not write a message anywhere if log_level is too high for defined targets' do
+    it 'does not write a message anywhere if a logger level is too high for defined targets' do
       # message level, logger level
       expect {
         multiio.write 'hi ', Tracee::Logger::DEBUG, Tracee::Logger::WARN

@@ -68,8 +68,12 @@ module Tracee
       formatter.respond_to? :should_process_caller? and formatter.should_process_caller?
     end
     
-    def add_stream(target)
-      @streams << Stream.new(target)
+    def add_stream(target_or_stream)
+      if target_or_stream.is_a? Tracee::Stream
+        @streams << target_or_stream
+      else
+        @streams << Stream.new(target_or_stream)
+      end
     end
     
     def level=(level)

@@ -19,6 +19,8 @@ module Tracee
             SCRIPT_LINES__[file] = IO.readlines(file)
           end
           SCRIPT_LINES__[file]
+        elsif lines = SCRIPT_LINES__[file]
+          lines
         end
       else
         if lines = SCRIPT_LINES__[file]

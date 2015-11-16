@@ -4,10 +4,10 @@ module Tracee
     attr_reader :target
     
     class TargetError < TypeError
-      def initialize(message='A target must be IO | String | {<level name> => <level log file path or IO>, ... } | {:cascade => <level log file path pattern with "level" key>}', *) super end
+      def initialize(message='A target must be IO | String | Hash{<level name> => <level log file path | IO>, ... } | Hash{:cascade => <level log file path pattern with "level" key>}', *) super end
     end
       
-    # @ target : IO | String | {<level name> => < level log file path >, ... } | {:cascade => < level log file path pattern >}
+    # @ target : IO | String | {<level name> => < level log file path | IO >, ... } | {:cascade => < level log file path pattern >}
     # pattern example : "log/development.%{level}.log"
     def initialize(target)
       if target.is_a? Hash
@@ -64,6 +64,35 @@ module Tracee
       when IO, StringIO then target << msg
       when String then File.open(target, 'a') {|f| f << msg}
       end
+    end
+
+  end
+  
+  
+  class IndifferentStream < Stream
+    
+    class TargetError < TypeError
+      def initialize(message='A target must be an object implementing #<< method | Hash{<level name> => <such an object>, ... }', *) super end
+    end
+    
+    # @ target : IO | String | {<level name> => < level log file path | IO >, ... } | {:cascade => < level log file path pattern >}
+    # pattern example : "log/development.%{level}.log"
+    def initialize(target)
+      if target.is_a? Hash
+        raise TargetError if target.values.any? {|val| !val.respond_to? :<<}
+        
+        target = target.with_indifferent_access
+      else
+        raise TargetError unless target.respond_to? :<<
+      end
+
+      @target = target
+    end
+
+    private
+    
+    def io_write(target, msg)
+      target << msg
     end
 
   end

@@ -1,4 +1,4 @@
-# When you working with IRB/Pry/Ripl It should be defined in according rc-file for all loaded ruby files to be cached into.
+# When you working with IRB/Pry/Ripl it should be defined in according rc-file for all loaded ruby files to be cached into.
 unless defined? SCRIPT_LINES__
   SCRIPT_LINES__ = {}
 end
@@ -23,6 +23,7 @@ require 'tracee/stack'
 require 'tracee/ext/exception'
 require 'tracee/ext/active_support'
 require 'tracee/ext/better_errors'
+require 'tracee/engine'
 
 module Tracee
   CALLER_RE = \
@@ -49,19 +50,8 @@ module Tracee
     include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
   
-  ## Rails usage
-  # Add to initializers:
-  #
-  # unless Rails.env.production?
-  #   Tracee.decorate_better_errors_stack # if you're using better_errors
-  #   Tracee.decorate_active_support_stack # otherwise
-  # end
-  #
-  # Because these decorations may slightly slowdown an application, they're not run automatically.
-  #
   # Use `Tracee.decorate_stack_everywhere` only within a console, because it significantly slowdown rails middleware.
   # So better put it into .irbrc or similar.
-  ##
   class << self
     
     def decorate_exceptions_stack
