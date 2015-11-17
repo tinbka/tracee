@@ -128,11 +128,13 @@ module Tracee
             if caller_at.is_a? Array
               caller_slice = caller_at.map! {|i| caller[i]}
             else
-              caller_slice = [*caller[caller_at]]
+              caller_slice = [caller[caller_at]]
             end
+          else
+            caller_slice = []
           end
             
-          write msg, progname, '#{level_name}', #{level_int}, caller_slice
+          write msg, progname, '#{level_name}', #{level_int}, caller_slice.flatten
         end
         
         def #{level_name}?

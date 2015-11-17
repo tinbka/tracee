@@ -132,7 +132,7 @@ Using a formatter that processes a caller, by default you would see within every
 11:22:33.123 INFO [user.rb:42 :mark_dialog_as_read]: 1265
 ```
 
-but you can tell a logger to pick a caller stack slice by providing the `:caller_at => < Integer | Range | Array<Integer> >` option. For more processable call forms see `spec/logger_spec.rb`.
+but you can tell a logger to pick a caller stack slice by providing the `:caller_at => < Integer | Range | Array<Integer | Range> >` option. For more processable call forms see `spec/logger_spec.rb`.
 
 ```ruby
 # app/controllers/dialogs_controller.rb, this line is 138
