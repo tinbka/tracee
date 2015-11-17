@@ -24,11 +24,15 @@ module Tracee
   #  23:29:59.120 INFO [(irb):8 :irb_binding]: [tick +0.000559] [120.978946ms each; 2419.578914ms total] #<Ability:0x000000088c89c8>
   module Benchmarkable
     
-    def benchmark(times: 1, &block)
+    def benchmark(times: 1)
+      return yield unless info?
+      
       @benchmark = Benchmark.new
       before_proc = Time.now
       
+      prev_level, self.level = self.level, :unknown
       (times - 1).times {yield}
+      self.level = prev_level
       @benchmark.last_pass!
       result = yield
       
@@ -39,9 +43,15 @@ module Tracee
       milliseconds_each = highlight_time_diff(diff_ms/times)
       milliseconds_total = highlight_time_diff(diff_ms)
       info "[#{milliseconds_each}ms each; #{milliseconds_total}ms total] #{result}", caller_at: 1
+      
+    ensure
+      self.level = prev_level
+      @benchmark = nil
     end
     
     def tick(msg='', caller_offset: 0)
+      return unless @benchmark or info?
+      
       now = Time.now
       
       if @benchmark
@@ -66,6 +76,8 @@ module Tracee
     end
     
     def tick!(msg='', caller_offset: 0)
+      return unless @benchmark or info?
+      
       @benchmark.first! if @benchmark
       Thread.current[:tracee_checkpoint] = nil
       
