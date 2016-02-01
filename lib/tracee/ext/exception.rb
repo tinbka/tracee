@@ -1,16 +1,15 @@
 module Tracee
   module Extensions
     module Exception
-      extend ActiveSupport::Concern
       
-      included do
-        alias_method_chain :set_backtrace, :decorate
-        class_attribute :trace_decorator
+      def self.prepended(exc_class)
+        exc_class.send :class_attribute, :trace_decorator
       end
       
       ## Gotcha:
       # If you also set (e.g. in irbrc file) 
       #
+      #   SCRIPT_LINES__['(irb)'] = []
       #   module Readline
       #     alias :orig_readline :readline
       #     def readline(*args)
@@ -25,7 +24,7 @@ module Tracee
       ##
       if RUBY_VERSION > '2.1'
         
-        def set_backtrace_with_decorate(trace)
+        def set_backtrace(trace)
           if decorator = self.class.trace_decorator
             if trace.is_a? Thread::Backtrace
               return trace
@@ -33,7 +32,8 @@ module Tracee
               trace = decorator.(trace)
             end
           end
-          set_backtrace_without_decorate(trace)
+          
+          super(trace)
         end
         
       else
@@ -42,7 +42,8 @@ module Tracee
           if decorator = self.class.trace_decorator
             trace = decorator.(trace)
           end
-          set_backtrace_without_decorate(trace)
+          
+          super(trace)
         end
         
       end

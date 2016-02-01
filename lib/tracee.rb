@@ -10,6 +10,9 @@ require 'active_support/core_ext/module/aliasing'
 require 'active_support/core_ext/class/attribute'
 require 'active_support/tagged_logging'
 
+# Handle damned `prepend_features Exception` in a new version of BetterErrors.
+begin require 'better_errors'; rescue LoadError; end
+
 require 'colorize'
 
 require 'tracee/version'
@@ -43,7 +46,9 @@ module Tracee
       
       
   class ::Exception
-    include Tracee::Extensions::Exception
+    # It must be prepended in order to work along with better_errors v2.
+    # Also, this way it takes less internal calls to work.
+    prepend Tracee::Extensions::Exception
   end
   
   module ::ActiveSupport::TaggedLogging::Formatter
