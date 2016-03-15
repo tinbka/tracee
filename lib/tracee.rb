@@ -1,4 +1,4 @@
-# When you working with IRB/Pry/Ripl it should be defined in according rc-file for all loaded ruby files to be cached into.
+# When you working with IRB/Pry/Ripl it should be defined in the according rc-file so that all loaded ruby files could be cached into it.
 unless defined? SCRIPT_LINES__
   SCRIPT_LINES__ = {}
 end
@@ -9,9 +9,6 @@ require 'active_support/core_ext/hash/indifferent_access'
 require 'active_support/core_ext/module/aliasing'
 require 'active_support/core_ext/class/attribute'
 require 'active_support/tagged_logging'
-
-# Handle damned `prepend_features Exception` in a new version of BetterErrors.
-begin require 'better_errors'; rescue LoadError; end
 
 require 'colorize'
 
@@ -47,15 +44,27 @@ module Tracee
       }}
       
       
-  class ::Exception
-    # It must be prepended in order to work along with better_errors v2.
-    # Also, this way it takes less internal calls to work.
-    prepend Tracee::Extensions::Exception
+  if defined? ::BetterErrors::ExceptionExtension
+    # BetterErrors has been loaded
+    # Insert our extension in between BetterErrors::ExceptionExtension and Exception
+    module ::BetterErrors::ExceptionExtension
+      include Tracee::Extensions::Exception
+    end
+    ::Exception.send :class_attribute, :trace_decorator
+  else
+    # BetterErrors has not yet been loaded or will not be loaded at all
+    # Just insert our extension before Exception
+    class ::Exception
+      prepend Tracee::Extensions::Exception
+      class_attribute :trace_decorator
+    end
   end
+  
   
   module ::ActiveSupport::TaggedLogging::Formatter
     include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
+  
   
   # Use `Tracee.decorate_stack_everywhere` only within a console, because it significantly slowdown rails middleware.
   # So better put it into .irbrc or similar.
