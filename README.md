@@ -96,6 +96,12 @@ $log = Tracee::Logger.new(
 )
 ```
 
+#### Usage with Heroku
+
+Since Heroku filesystem is [ephemeral](https://devcenter.heroku.com/articles/dynos#ephemeral-filesystem), file output has little sense there and `log/` folder is not initialized by default.
+
+If you deploy to Heroku, make sure in your production Rails environment Tracee::Logger is initialized with `streams: [$stdout]` to not run into weird issues.
+
 ### Preprocessors
 
 A preprocessor is a callable object which inherits from `Tracee::Preprocessors::Base` and implements a #call method with 5 arguments:
