@@ -263,6 +263,13 @@ RuntimeError: It has appeared too wet!
 ```
 
 This feature is integrated with BetterErrors and ActiveSupport::BacktraceCleaner to format a trace of exceptions that would be raised within Rails server environment before send it to a logger.  
+Though, in order to use trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrors,  
+e.g. in Gemfile
+
+```ruby
+gem 'better_errors', require: ['tracee', 'better_errors']
+```
+
 To enable it in a console, put
 
 ```ruby

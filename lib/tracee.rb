@@ -43,22 +43,17 @@ module Tracee
       }|/rubygems/core_ext/kernel_require.rb#{ # `require' override
       }}
       
-      
+  # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrros.
   if defined? ::BetterErrors::ExceptionExtension
-    # BetterErrors has been loaded
-    # Insert our extension in between BetterErrors::ExceptionExtension and Exception
-    module ::BetterErrors::ExceptionExtension
-      include Tracee::Extensions::Exception
-    end
-    ::Exception.send :class_attribute, :trace_decorator
+    # BetterErrors was loaded and BetterErrors::ExceptionExtension was prepended to Exception.
+    # There is no way to seamlessly use another extension in between them
+    # without side-effects, so we just skip extending.
   else
-    # BetterErrors has not yet been loaded or will not be loaded at all
-    # Just insert our extension before Exception
-    class ::Exception
-      prepend Tracee::Extensions::Exception
-      class_attribute :trace_decorator
-    end
+    # BetterErrors has not yet been loaded or will not be loaded at all.
+    # Just insert the extension before Exception.
+    ::Exception.prepend Tracee::Extensions::Exception
   end
+  ::Exception.send :class_attribute, :trace_decorator
   
   
   module ::ActiveSupport::TaggedLogging::Formatter
