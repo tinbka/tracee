@@ -17,9 +17,9 @@ module Tracee
           
           frames = @error_page.backtrace_frames # original definition
           frames = frames.map(&:to_s).reject {|line| line =~ IGNORE_RE}
-          frames = Stack::BaseDecorator.(frames)
+          frames = Stack::BaseDecorator.(frames, paint_code_line: :greenish)
           frames.each do |frame|
-            if frame =~ /[-\w]+ \(\d+\.[\w\.]+\) /
+            if frame =~ /^[-\w]+ \(\d+\.[\w\.]+\) /
               logger.debug "  #{frame}"
             else
               logger.fatal "  #{frame}"

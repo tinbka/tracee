@@ -3,7 +3,7 @@ module Tracee
     module BaseDecorator
     
       # Make sure that Dir.pwd is the application root directory
-      def self.call(source)
+      def self.call(source, paint_code_line: nil)
         return source if source.empty? or source[0]["\n"] # already decorated
         
         result, current_line_steps = [], []
@@ -21,6 +21,7 @@ module Tracee
               current_line_steps.unshift "`#{method}#{" {#{step_details[:block_level]}}" if step_details[:block_level]}'"
             elsif step_details[:line].to_i > 0 and code_line = Tracee::Stack.readline(step_details[:path], step_details[:line].to_i)
               current_line_steps.unshift step
+              code_line = code_line.send paint_code_line if paint_code_line
               result << "#{current_line_steps * ' -> '}\n   >>   #{code_line}"
               current_line_steps = []
             else
