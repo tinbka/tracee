@@ -62,7 +62,7 @@ module Tracee
     def io_write(target, msg)
       case target
       when IO, StringIO then target << msg
-      when String then File.open(target, 'a') {|f| f << msg}
+      when String then File.open(target, 'a+') {|f| f << msg}
       end
     end
 
