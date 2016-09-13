@@ -9,6 +9,10 @@ module Tracee
       def halt!
         throw :halt
       end
+    
+      def inspect
+        '#<%s:0x00%x>'% [self.class.name, object_id << 1]
+      end
       
     end
   end
