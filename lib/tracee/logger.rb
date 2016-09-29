@@ -110,6 +110,10 @@ module Tracee
         def #{level_name}(*args, &block)
           return if @level > #{level_int}
           
+          unless args[1].nil? or args[1].is_a?(Hash)
+            raise TypeError, "\#{self.class.name}#\#{__callee__}'s second argument if given, is expected to be Hash. \#{args[1].class.name} is given."
+          end
+          
           if block
             msg = block.()
             if args[0].is_a? Hash

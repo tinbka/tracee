@@ -89,9 +89,7 @@ module Tracee
     end
     
     def decorate_active_support_stack
-      ActiveSupport::BacktraceCleaner.class_eval do
-        include Tracee::Extensions::ActiveSupport::BacktraceCleaner
-      end
+      ActiveSupport::BacktraceCleaner.prepend Tracee::Extensions::ActiveSupport::BacktraceCleaner
     end
     
     def decorate_stack_everywhere
