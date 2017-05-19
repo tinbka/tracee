@@ -17,7 +17,7 @@ module Tracee
     attr_reader :level, :preprocessors, :formatter, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatter: {:formatter => :tracee}, preprocessors: [], level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:formatter => :plain}, preprocessors: [], level: :info)
       @streams = []
       streams ||= [stream]
       streams.each {|item| add_stream item}

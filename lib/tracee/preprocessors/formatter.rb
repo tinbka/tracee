@@ -49,12 +49,19 @@ module Tracee
         if params_or_key.is_a? Symbol
           params = TEMPLATES[params_or_key]
         end
+        if params_or_key.is_a? String
+          params = params_or_key
+        end
         if params.is_a? String
           params = {summary: params}
         end
+        if params_or_key.is_a? Hash
+          params = TEMPLATES[params_or_key[:template]] || {}
+          params = params.merge params_or_key
+        end
         
         unless params.is_a? Hash
-          raise TypeError, 'params must be a Hash or a reference to one of Tracee::Formatters::Template::TEMPLATES'
+          raise TypeError, 'the argument must be a Hash or a reference to one of Tracee::Preprocessors::Formatters::TEMPLATES'
         end
         
         @summary, @caller, @datetime, @level = params.values_at(:summary, :caller, :datetime, :level).map &:freeze

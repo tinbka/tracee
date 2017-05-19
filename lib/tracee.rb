@@ -57,6 +57,7 @@ module Tracee
   ::Exception.send :class_attribute, :trace_decorator
   
   
+  # Doesn't work with Rails 5+
   module ::ActiveSupport::TaggedLogging::Formatter
     include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
