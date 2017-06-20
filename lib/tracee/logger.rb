@@ -17,7 +17,7 @@ module Tracee
     attr_reader :level, :preprocessors, :formatter, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatter: {:formatter => :plain}, preprocessors: [], level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:default => :plain}, preprocessors: [], level: :info)
       @streams = []
       streams ||= [stream]
       streams.each {|item| add_stream item}
@@ -55,7 +55,7 @@ module Tracee
     
     def set_formatter(callable_or_symbol=nil, *formatter_params)
       if callable_or_symbol.is_a? Symbol
-        @formatter = Tracee::Preprocessors.const_get(callable_or_symbol.to_s.camelize).new(*formatter_params)
+        @formatter = Tracee::Preprocessors.const_get(callable_or_symbol.to_s.camelize.sub('Default', 'Formatter')).new(*formatter_params)
       elsif callable_or_symbol.respond_to? :call
         @formatters = callable_or_symbol
       else

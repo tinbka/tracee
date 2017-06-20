@@ -1,5 +1,5 @@
 describe Tracee::Logger do
-  let(:o) {Tracee::Logger.new}
+  let(:o) {Tracee::Logger.new formatter: {:default => :tracee}}
   let(:stream) {o.streams[0]}
   let(:formatter) {o.formatter}
   let(:now) {DateTime.parse '2015.01.01 00:00:00'}
@@ -63,7 +63,7 @@ describe Tracee::Logger do
   
   
   describe 'passes a message' do
-    let(:o3) {Tracee::Logger.new preprocessors: [:base]}
+    let(:o3) {Tracee::Logger.new formatter: {:default => :tracee}, preprocessors: [:base]}
     let(:ppr) {o3.preprocessors[0]}
       
     it 'to a preprocessor' do
