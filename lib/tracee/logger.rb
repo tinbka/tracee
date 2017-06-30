@@ -77,7 +77,15 @@ module Tracee
     end
     
     def level=(level)
-      @level = level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
+      Thread.current["tracee_#{__id__}_level"] = @level = norm_level(level)
+    end
+    
+    def local_level=(level)
+      Thread.current["tracee_#{__id__}_level"] = norm_level(level)
+    end
+    
+    def local_level
+      Thread.current["tracee_#{__id__}_level"] ||= @level
     end
     
     alias log_level= level=
@@ -108,7 +116,7 @@ module Tracee
     
       class_eval <<-EOS, __FILE__, __LINE__+1
         def #{level_name}(*args, &block)
-          return if @level > #{level_int}
+          return if local_level > #{level_int}
           
           unless args[1].nil? or args[1].is_a?(Hash)
             raise TypeError, "\#{self.class.name}#\#{__callee__}'s second argument if given, is expected to be Hash. \#{args[1].class.name} is given."
@@ -152,7 +160,22 @@ module Tracee
     alias < warn
     
     
+    def silence(temporary_level=:error)
+      begin
+        old_local_level = local_level
+        self.local_level = temporary_level
+
+        yield self
+      ensure
+        self.local_level = old_local_level
+      end
+    end
+    
     private
+    
+    def norm_level(level)
+      level.is_a?(Integer) ? level : LEVELS.index(level.to_s.upcase)
+    end
     
     def read_log_level_from_env
       if ENV['LOG_LEVEL'] and LEVELS.include? ENV['LOG_LEVEL']
