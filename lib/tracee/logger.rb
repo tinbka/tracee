@@ -149,6 +149,10 @@ module Tracee
           write msg, progname, '#{level_name}', #{level_int}, caller_slice.flatten
         end
         
+        def #{level_name}!
+          self.level = #{level_int}
+        end
+        
         def #{level_name}?
           @level <= #{level_int}
         end
