@@ -53,8 +53,11 @@ module Tracee
     # without side-effects, so we just skip extending.
   else
     # BetterErrors has not yet been loaded or will not be loaded at all.
-    # Just insert the extension before Exception.
-    ::Exception.prepend Tracee::Extensions::Exception
+    # Check if it's not the version that always freezes on error with the trace decorator.
+    if RUBY_VERSION <= '2.3.1'
+      # Just insert the extension before Exception.
+      ::Exception.prepend Tracee::Extensions::Exception
+    end
   end
   ::Exception.send :class_attribute, :trace_decorator
   
