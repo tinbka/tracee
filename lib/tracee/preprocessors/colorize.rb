@@ -12,8 +12,11 @@ module Tracee::Preprocessors
     
     def initialize(color_map=COLOR_MAP)
       @color_map = color_map
-      exception_classes = Exception.descendants
-      @exception_classes_re = Exception.descendants.map(&:name).join '|'
+      exception_classes = []
+      ObjectSpace.each_object(Exception.singleton_class) do |k|
+        exception_classes.unshift k unless k == self
+      end
+      @exception_classes_re = exception_classes.map(&:name).join '|'
     end
   
     def call(msg_level, datetime, progname, msg, caller_slice=[])
