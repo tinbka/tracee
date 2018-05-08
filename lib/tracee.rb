@@ -37,6 +37,7 @@ module Tracee
       
   IGNORE_RE = \
     %r{/irb(/|\.rb$)#{ # irb internals
+      }|^[\w\-]+ \([\d\.]+\) #{ # rails-formatted gem paths
       }|lib/active_support/dependencies.rb$#{ # everywhere-proxy
       }|^-e$#{ # ruby -e oneliner
       }|^(script|bin)/#{ # other common entry points
@@ -45,6 +46,10 @@ module Tracee
       }|lib/spring/#{ # spring middleware
       }|/rubygems/core_ext/kernel_require.rb#{ # `require' override
       }}
+      
+  # Disable gem-related lines in BetterErrors exception backtrace log output
+  mattr_accessor :better_errors_quiet_backtraces
+  self.better_errors_quiet_backtraces = true
       
   # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrros.
   if defined? ::BetterErrors::ExceptionExtension
