@@ -6,46 +6,49 @@ module Tracee
         exc_class.send :class_attribute, :trace_decorator
       end
       
-      ## Gotcha:
-      # If you also set (e.g. in irbrc file) 
-      #
-      #   SCRIPT_LINES__['(irb)'] = []
-      #   module Readline
-      #     alias :orig_readline :readline
-      #     def readline(*args)
-      #       ln = orig_readline(*args)
-      #       SCRIPT_LINES__['(irb)'] << "#{ln}\n"
-      #       ln
-      #     end
-      #   end
-      #
-      # it will be possible to fetch lines entered in IRB
-      # else format_trace would only read ordinary require'd files
-      ##
-      if RUBY_VERSION > '2.1'
-        
-        def set_backtrace(trace)
-          if decorator = self.class.trace_decorator
-            if trace.is_a? Thread::Backtrace
-              return trace
-            else
+      # Check if it's not the version that always freezes on error with the trace decorator.
+      if RUBY_VERSION <= '2.3.1'
+        ## Gotcha:
+        # If you also set (e.g. in irbrc file) 
+        #
+        #   SCRIPT_LINES__['(irb)'] = []
+        #   module Readline
+        #     alias :orig_readline :readline
+        #     def readline(*args)
+        #       ln = orig_readline(*args)
+        #       SCRIPT_LINES__['(irb)'] << "#{ln}\n"
+        #       ln
+        #     end
+        #   end
+        #
+        # it will be possible to fetch lines entered in IRB
+        # else format_trace would only read ordinary require'd files
+        ##
+        if RUBY_VERSION > '2.1.0'
+          
+          def set_backtrace(trace)
+            if decorator = self.class.trace_decorator
+              if trace.is_a? Thread::Backtrace
+                return trace
+              else
+                trace = decorator.(trace)
+              end
+            end
+            
+            super(trace)
+          end
+          
+        else
+          
+          def set_backtrace(trace)
+            if decorator = self.class.trace_decorator
               trace = decorator.(trace)
             end
+            
+            super(trace)
           end
           
-          super(trace)
         end
-        
-      else
-        
-        def set_backtrace(trace)
-          if decorator = self.class.trace_decorator
-            trace = decorator.(trace)
-          end
-          
-          super(trace)
-        end
-        
       end
       
       ## Use case: 
@@ -60,8 +63,12 @@ module Tracee
       def log
         Rails.logger.error [
               "The exception has been handled: #{self.class} — #{message.force_encoding('UTF-8')}:",
-              *Rails.backtrace_cleaner.clean(backtrace)
+              *Rails.backtrace_cleaner.clean(backtrace_with_cause_backtrace)
             ]*"\n"
+      end
+  
+      def backtrace_with_cause_backtrace
+        backtrace + (cause ? ["+ cause (#{cause.class}) backtrace", *cause.backtrace_with_cause_backtrace] : [])
       end
           
     end

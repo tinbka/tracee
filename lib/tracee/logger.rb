@@ -17,7 +17,7 @@ module Tracee
     attr_reader :level, :preprocessors, :formatter, :streams
     
     
-    def initialize(stream: $stdout, streams: nil, formatter: {:default => :plain}, preprocessors: [], level: :info)
+    def initialize(stream: $stdout, streams: nil, formatter: {:default => :plain}, preprocessors: [], level: :info, default: false)
       @streams = []
       streams ||= [stream]
       streams.each {|item| add_stream item}
@@ -40,6 +40,13 @@ module Tracee
       
       self.level = level
       read_log_level_from_env
+      
+      if default
+        if Tracee.default_logger
+          warn "Overwriting default logger #{Tracee.default_logger.inspect}\nwith the new one: #{inspect}"
+        end
+        Tracee.default_logger = self
+      end
     end
     
     
@@ -172,6 +179,18 @@ module Tracee
         yield self
       ensure
         self.local_level = old_local_level
+      end
+    end
+    
+    def default?
+      Tracee.default_logger.eql? self
+    end
+    
+    def default=(boolean)
+      if boolean
+        Tracee.default_logger = self
+      elsif default?
+        Tracee.default_logger = nil
       end
     end
     

@@ -51,6 +51,9 @@ module Tracee
   mattr_accessor :better_errors_quiet_backtraces
   self.better_errors_quiet_backtraces = true
       
+  # Default logger to respond to Object#__log__
+  mattr_accessor :default_logger
+      
   # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrros.
   if defined? ::BetterErrors::ExceptionExtension
     # BetterErrors was loaded and BetterErrors::ExceptionExtension was prepended to Exception.
@@ -58,11 +61,8 @@ module Tracee
     # without side-effects, so we just skip extending.
   else
     # BetterErrors has not yet been loaded or will not be loaded at all.
-    # Check if it's not the version that always freezes on error with the trace decorator.
-    if RUBY_VERSION <= '2.3.1'
-      # Just insert the extension before Exception.
-      ::Exception.prepend Tracee::Extensions::Exception
-    end
+    # Just insert the extension before Exception.
+    ::Exception.prepend Tracee::Extensions::Exception
   end
   ::Exception.send :class_attribute, :trace_decorator
   
@@ -111,6 +111,5 @@ module Tracee
   
   end
   
-  
-  $log ||= Logger.new
+  Logger.new default: true
 end
