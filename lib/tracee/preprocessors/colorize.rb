@@ -21,7 +21,7 @@ module Tracee::Preprocessors
   
     def call(msg_level, datetime, progname, msg, caller_slice=[])
       case msg
-      when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) at (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?: \+\d{4})?)}
+      when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>(?:[\d\.]+|[\da-f:]+)) at (?<time>[\d\-]+ [\d:]+(?: \+\d{4})?)}
         m = $~
         %{Started #{m[:method].send @color_map[:head]} "#{m[:path].send @color_map[:head]}" for #{m[:ip].send @color_map[:head]} at #{m[:time].send @color_map[:head]}}
       when %r{^Processing by (?<class>[A-Z][\w:]+)#(?<method>\w+) as (?<format>[A-Z]+)$}
