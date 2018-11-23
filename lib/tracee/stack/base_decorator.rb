@@ -13,7 +13,7 @@ module Tracee
         source.each_with_index do |step, i|
           next_step_details = source[i+1] && source[i+1].match(CALLER_RE)
           
-          if step_details and step_details[:path] !~ Tracee::IGNORE_RE
+          if step_details and ($DEBUG or step_details[:path] !~ Tracee::IGNORE_RE)
             #if level = step_details[:block_level]
             #  step = step.sub(/block (\(\d+ levels\) )?in/, "{#{level}}")
             #end
