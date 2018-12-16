@@ -8,7 +8,7 @@ module Tracee
           def log_exception
             return unless logger = ::BetterErrors.logger
 
-            message = "\n#{@error_page.exception.class} - #{@error_page.exception.message}:"
+            message = "\n#{@error_page.exception_type} - #{@error_page.exception_message}:"
 
             logger.fatal message
             
