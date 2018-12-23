@@ -62,7 +62,7 @@ module Tracee
       ##
       def log
         Rails.logger.error [
-              "The exception has been handled: #{self.class} — #{message.dup.force_encoding('UTF-8')}:",
+              "The exception has been handled: #{self.class.to_s.light_red} — #{message.dup.force_encoding('UTF-8')}:",
               *(
                 $DEBUG ? 
                   backtrace_with_cause_backtrace : 
@@ -72,11 +72,11 @@ module Tracee
       end
   
       def backtrace_with_cause_backtrace
-        backtrace + (
-          cause ?
-            ["+ cause (#{cause.class}) backtrace", *cause.backtrace_with_cause_backtrace] : 
-            []
-        )
+        if cause
+          backtrace - cause.backtrace + ["+ cause (#{cause.class.to_s.light_red}) backtrace", *cause.backtrace_with_cause_backtrace]
+        else
+          backtrace
+        end
       end
           
     end
