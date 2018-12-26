@@ -24,7 +24,7 @@ module Tracee::Preprocessors
       when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>(?:[\d\.]+|[\da-f:]+)) at (?<time>[\d\-]+ [\d:]+(?: \+\d{4})?)}
         m = $~
         %{Started #{m[:method].send @color_map[:head]} "#{m[:path].send @color_map[:head]}" for #{m[:ip].send @color_map[:head]} at #{m[:time].send @color_map[:head]}}
-      when %r{^Processing by (?<class>[A-Z][\w:]+)#(?<method>\w+) as (?<format>[A-Z]+)$}
+      when %r{^Processing by (?<class>[A-Z][\w:]+)#(?<method>\w+) as (?<format>[A-Z]+|\*\/\*)$}
         m = $~
         %{Processing by #{m[:class].send @color_map[:action]}##{m[:method].send @color_map[:action]} as #{m[:format].send @color_map[:action]}}
       when %r{^  Parameters: (.+)$}
