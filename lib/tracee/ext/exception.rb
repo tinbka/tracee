@@ -66,7 +66,7 @@ module Tracee
               *(
                 $DEBUG ? 
                   backtrace_with_cause_backtrace : 
-                  backtrace_with_cause_backtrace.reject {|line| line =~ IGNORE_RE}
+                  backtrace_with_cause_backtrace.reject { |line| line =~ IGNORE_RE }
                 )
             ]*"\n"
       end

@@ -38,10 +38,11 @@ module Tracee
   IGNORE_RE = \
     %r{/irb(/|\.rb$)#{ # irb internals
       }|^[\w\-]+ \([\d\.]+\) #{ # rails-formatted gem paths
+      }|/ruby-\d.\d.\d(@[^/]+)?/gems/#{ # standard rvm gem paths
       }|lib/active_support/dependencies.rb$#{ # everywhere-proxy
       }|^-e$#{ # ruby -e oneliner
       }|^(script|bin)/#{ # other common entry points
-      }|/gems/bundler-\d|ruby-\d.\d.\d(@[^/]+)?/bin/#{ # bundle console
+      }|/gems/bundler-\d|/ruby-\d.\d.\d(@[^/]+)?/bin/#{ # bundle console
       }|bin/rails$|lib/rails/commands(/|\.rb$)#{ # rails console
       }|lib/spring/#{ # spring middleware
       }|/rubygems/core_ext/kernel_require.rb#{ # `require' override
