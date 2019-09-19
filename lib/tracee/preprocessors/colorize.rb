@@ -9,7 +9,7 @@ module Tracee::Preprocessors
       complete: :white,
       raise: :red
     }
-    
+
     def initialize(color_map=COLOR_MAP)
       @color_map = color_map
       exception_classes = []
@@ -18,7 +18,7 @@ module Tracee::Preprocessors
       end
       @exception_classes_re = exception_classes.map(&:name).join '|'
     end
-  
+
     def call(msg_level, datetime, progname, msg, caller_slice=[])
       case msg
       when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>(?:[\d\.]+|[\da-f:]+)) at (?<time>[\d\-]+ [\d:]+(?: \+\d{4})?)}
@@ -33,7 +33,7 @@ module Tracee::Preprocessors
       when %r{^Redirected to (\S+)$}
         m = $~
         "Redirected to #{m[1].send @color_map[:redirect]}"
-      when %r{^  Rendered .+ \(\d+\.\dms\)$}
+      when %r{^  Render(ed|ing) .+(?: \([\w\d .:|]+\))?$}
         msg.send @color_map[:render]
       when %r{^Completed (?<code>\d{3}) (?<codename>[A-Z][\w ]+) in (?<time>\d+ms) (?<times>.+)$}
         m = $~
