@@ -30,11 +30,11 @@ require 'tracee/engine'
 
 module Tracee
   CALLER_RE = \
-    %r{^(?<path>.*?(?<file>[^/\\]+?))#{ # ( path ( file ) ) 
+    %r{^(?<path>.*?(?<file>[^/\\]+?))#{ # ( path ( file ) )
       }:(?<line>\d+)(?::in #{ # :( line )[ :in
       }`(?<is_block>block (?:\((?<block_level>\d+) levels\) )?in )?(?<method>.+?)'#{ # `( [ block in ] closure )' ]
       })?$}
-      
+
   IGNORE_RE = \
     %r{/irb(/|\.rb$)#{ # irb internals
       }|^[\w\-]+ \([\d\.]+\) #{ # rails-formatted gem paths
@@ -47,49 +47,50 @@ module Tracee
       }|lib/spring/#{ # spring middleware
       }|/rubygems/core_ext/kernel_require.rb#{ # `require' override
       }}
-      
+
   # Disable gem-related lines in BetterErrors exception backtrace log output
   mattr_accessor :better_errors_quiet_backtraces
   self.better_errors_quiet_backtraces = true
-      
+
   # Default logger to respond to Object#__log__
   mattr_accessor :default_logger
-      
-  # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrros.
+
+  # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrors.
   if defined? ::BetterErrors::ExceptionExtension
     # BetterErrors was loaded and BetterErrors::ExceptionExtension was prepended to Exception.
     # There is no way to seamlessly use another extension in between them
     # without side-effects, so we just skip extending.
+    warn "Skipping injecting Tracee::Extensions::Exception because BetterErrors has been loaded prior to Tracee"
   else
     # BetterErrors has not yet been loaded or will not be loaded at all.
     # Just insert the extension before Exception.
     ::Exception.prepend Tracee::Extensions::Exception
   end
   ::Exception.send :class_attribute, :trace_decorator
-  
-  
+
+
   # Doesn't work with Rails 5+
   module ::ActiveSupport::TaggedLogging::Formatter
     include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
-  
-  
+
+
   # Use `Tracee.decorate_stack_everywhere` only within a console, because it significantly slowdown rails middleware.
   # So better put it into .irbrc or similar.
   class << self
-    
+
     def decorate_exceptions_stack
       Exception.trace_decorator = Stack::BaseDecorator
-      
+
       # These would extremely slowdown or stop runtime
       [SystemStackError, NoMemoryError, NameError, defined?(IRB::Abort) && IRB::Abort].compact.each do |klass|
         klass.trace_decorator = nil
       end
-      
+
       # But this NameError's subclass would not
       NoMethodError.trace_decorator = Exception.trace_decorator
     end
-    
+
     def decorate_better_errors_stack(from_decorate_everywhere=false)
       if defined? BetterErrors
         BetterErrors::Middleware.class_eval do
@@ -99,18 +100,18 @@ module Tracee
         warn "Tracee.decorate_better_errors_stack was ignored, because BetterErrors hadn't been defined."
       end
     end
-    
+
     def decorate_active_support_stack
       ActiveSupport::BacktraceCleaner.prepend Tracee::Extensions::ActiveSupport::BacktraceCleaner
     end
-    
+
     def decorate_stack_everywhere
       decorate_exceptions_stack
       decorate_better_errors_stack(true)
       decorate_active_support_stack
     end
-  
+
   end
-  
+
   Logger.new default: true
 end
