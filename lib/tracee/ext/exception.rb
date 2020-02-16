@@ -1,15 +1,15 @@
 module Tracee
   module Extensions
     module Exception
-      
+
       def self.prepended(exc_class)
         exc_class.send :class_attribute, :trace_decorator
       end
-      
+
       # Check if it's not the version that always freezes on error with the trace decorator.
       if RUBY_VERSION <= '2.3.1'
         ## Gotcha:
-        # If you also set (e.g. in irbrc file) 
+        # If you also set (e.g. in irbrc file)
         #
         #   SCRIPT_LINES__['(irb)'] = []
         #   module Readline
@@ -25,7 +25,7 @@ module Tracee
         # else format_trace would only read ordinary require'd files
         ##
         if RUBY_VERSION > '2.1.0'
-          
+
           def set_backtrace(trace)
             if decorator = self.class.trace_decorator
               if trace.is_a? Thread::Backtrace
@@ -34,24 +34,24 @@ module Tracee
                 trace = decorator.(trace)
               end
             end
-            
+
             super(trace)
           end
-          
+
         else
-          
+
           def set_backtrace(trace)
             if decorator = self.class.trace_decorator
               trace = decorator.(trace)
             end
-            
+
             super(trace)
           end
-          
+
         end
       end
-      
-      ## Use case: 
+
+      ## Use case:
       # We have some method that we don't want to crash application in production but want to have this crash potential been logged
       #
       # def unsured_method
@@ -61,24 +61,34 @@ module Tracee
       # end
       ##
       def log
-        Rails.logger.error [
-              "The exception has been handled: #{self.class.to_s.light_red} — #{message.dup.force_encoding('UTF-8')}:",
-              *(
-                $DEBUG ? 
-                  backtrace_with_cause_backtrace : 
-                  backtrace_with_cause_backtrace.reject { |line| line =~ IGNORE_RE }
-                )
-            ]*"\n"
+        Rails.logger.error(
+          [
+            "The exception has been handled: #{description}:",
+            *(
+              $DEBUG ?
+                backtrace_with_cause_backtrace :
+                backtrace_with_cause_backtrace.reject { |line| line =~ IGNORE_RE }
+              )
+          ].join("\n")
+        )
       end
-  
+
+      protected
+
       def backtrace_with_cause_backtrace
         if cause
-          backtrace - cause.backtrace + ["+ cause (#{cause.class.to_s.light_red}) backtrace", *cause.backtrace_with_cause_backtrace]
+          backtrace - cause.backtrace + [
+            "+ cause (#{cause.description}) backtrace",
+            *cause.backtrace_with_cause_backtrace
+          ]
         else
           backtrace
         end
       end
-          
+
+      def description
+        "#{self.class.to_s.light_red}: #{message.dup.force_encoding('UTF-8')}"
+      end
     end
   end
 end
