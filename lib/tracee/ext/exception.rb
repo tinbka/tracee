@@ -87,7 +87,7 @@ module Tracee
       end
 
       def description
-        "#{self.class.to_s.light_red}: #{message.dup.force_encoding('UTF-8')}"
+        "#{self.class.to_s.light_red}: #{message.dup&.force_encoding('UTF-8') || "[No Message]"}"
       end
     end
   end
