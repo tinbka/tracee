@@ -17,43 +17,43 @@ module Tracee
   # Here's a sample:
   #
   #> $log.benchmark(times:20) {Ability.new(u)}
-  #  23:29:59.021 INFO [ability.rb:76 :assistant_permissions]: [tick +0.576797] 
-  #  23:29:59.034 INFO [ability.rb:84 :assistant_permissions]: [tick +0.245685] 
-  #  23:29:59.075 INFO [ability.rb:93 :assistant_permissions]: [tick +0.728214] 
-  #  23:29:59.120 INFO [ability.rb:111 :assistant_permissions]: [tick +0.866646] 
+  #  23:29:59.021 INFO [ability.rb:76 :assistant_permissions]: [tick +0.576797]
+  #  23:29:59.034 INFO [ability.rb:84 :assistant_permissions]: [tick +0.245685]
+  #  23:29:59.075 INFO [ability.rb:93 :assistant_permissions]: [tick +0.728214]
+  #  23:29:59.120 INFO [ability.rb:111 :assistant_permissions]: [tick +0.866646]
   #  23:29:59.120 INFO [(irb):8 :irb_binding]: [tick +0.000559] [120.978946ms each; 2419.578914ms total] #<Ability:0x000000088c89c8>
   module Benchmarkable
-    
+
     def benchmark(times: 1)
       return yield unless info?
-      
+
       @benchmark = Benchmark.new
       before_proc = Time.now
-      
+
       prev_level, self.level = self.level, :unknown
       (times - 1).times {yield}
       self.level = prev_level
       @benchmark.last_pass!
       result = yield
-      
+
       now = Time.now
       @benchmark = nil
-      
+
       diff_ms = (now - before_proc)*1000
       milliseconds_each = highlight_time_diff(diff_ms/times)
       milliseconds_total = highlight_time_diff(diff_ms)
       info "[#{milliseconds_each}ms each; #{milliseconds_total}ms total] #{result}", caller_at: 1
-      
+
     ensure
       self.level = prev_level
       @benchmark = nil
     end
-    
+
     def tick(msg='', caller_offset: 0)
       return unless @benchmark or info?
-      
+
       now = Time.now
-      
+
       if @benchmark
         if prev = Thread.current[:tracee_checkpoint]
           tick_diff = @benchmark.add_time(now - prev)
@@ -70,56 +70,57 @@ module Tracee
           info "[tick] #{msg}", caller_at: caller_offset+1
         end
       end
-      
+
       Thread.current[:tracee_checkpoint] = now
       nil
     end
-    
+
     def tick!(msg='', caller_offset: 0)
       return unless @benchmark or info?
-      
+
       @benchmark.first! if @benchmark
       Thread.current[:tracee_checkpoint] = nil
-      
+
       tick msg, caller_offset: caller_offset+1
     end
-    
-    
+
+    alias bm benchmark
+
     private
-    
+
     def highlight_time_diff(diff)
       diff.round(6).to_s.sub(/(\d+)\.(\d{0,3})(\d*)$/) {|m| "#$1.".light_white + $2.white + $3.light_black}
     end
-    
+
   end
-  
-  
+
+
   class Benchmark
     attr_reader :ticks_diffs, :last_pass, :tick_number
-    
+
     def initialize
       @ticks_diffs = Hash.new {|h, k| h[k] = 0}
     end
-    
+
     def last_pass!
       @last_pass = true
     end
-    
+
     def first!
       @tick_number = 0
     end
-    
+
     def next
       @tick_number += 1
     end
-    
+
     def add_time(amount)
       @ticks_diffs[@tick_number] += amount
     end
-    
+
     def tick_diff
       @ticks_diffs[@tick_number]
     end
-    
+
   end
 end
