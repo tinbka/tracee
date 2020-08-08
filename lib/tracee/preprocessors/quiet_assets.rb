@@ -7,13 +7,13 @@
 module Tracee
   module Preprocessors
     class QuietAssets < Base
-      
+
       def initialize(assets_paths=['assets'])
         @assets_paths_pattern = assets_paths * '|'
       end
-    
+
       def call(msg_level, datetime, progname, msg, caller_slice=[])
-        if msg =~ %r{^Started GET "/(#@assets_paths_pattern)/}
+        if msg.is_a?(String) and msg =~ %r{^Started GET "/(#@assets_paths_pattern)/}
           halt!
         else
           msg
