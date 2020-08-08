@@ -23,6 +23,7 @@ require 'tracee/preprocessors/colorize'
 require 'tracee/stream'
 require 'tracee/stack'
 require 'tracee/ext/object'
+require 'tracee/ext/array'
 require 'tracee/ext/exception'
 require 'tracee/ext/active_support'
 require 'tracee/ext/better_errors'
@@ -75,7 +76,8 @@ module Tracee
   end
 
 
-  # Use `Tracee.decorate_stack_everywhere` only within a console, because it significantly slowdown rails middleware.
+  # Use `Tracee.decorate_stack_everywhere` only within a console or during manual testing,
+  # because it significantly slows down rails middleware.
   # So better put it into .irbrc or similar.
   class << self
 

@@ -1,3 +1,3 @@
 module Tracee
-  VERSION = '1.0.29'
+  VERSION = '1.0.31'
 end
