@@ -27,17 +27,17 @@ module Tracee
     def benchmark(times: 1)
       return yield unless info?
 
-      @benchmark = Benchmark.new
+      self.benchmarker = Benchmark.new
       before_proc = Time.now
 
       prev_level, self.level = self.level, :unknown
       (times - 1).times {yield}
       self.level = prev_level
-      @benchmark.last_pass!
+      benchmarker.last_pass!
       result = yield
 
       now = Time.now
-      @benchmark = nil
+      self.benchmarker = nil
 
       diff_ms = (now - before_proc)*1000
       milliseconds_total = highlight_time_diff(diff_ms)
@@ -49,48 +49,64 @@ module Tracee
         info "[#{milliseconds_each}ms each; #{milliseconds_total}ms total] #{result}", caller_at: 1
       end
 
+      result
     ensure
       self.level = prev_level
-      @benchmark = nil
+      self.benchmarker = nil
     end
 
+    alias bm benchmark
+
     def tick(msg='', caller_offset: 0)
-      return unless @benchmark or info?
+      return unless benchmarker or info?
 
       now = Time.now
 
-      if @benchmark
-        if prev = Thread.current[:tracee_checkpoint]
-          tick_diff = @benchmark.add_time(now - prev)
-          if @benchmark.last_pass
+      if benchmarker
+        if prev = checkpoint
+          tick_diff = benchmarker.add_time(now - prev)
+          if benchmarker.last_pass
             info "[tick +#{highlight_time_diff(tick_diff)}] #{msg}", caller_at: caller_offset+1
           end
-          @benchmark.next
+          benchmarker.next
         # else we just write `now' to a thread var
         end
       else
-        if prev = Thread.current[:tracee_checkpoint]
+        if prev = checkpoint
           info "[tick +#{highlight_time_diff(now - prev)}] #{msg}", caller_at: caller_offset+1
         else
           info "[tick] #{msg}", caller_at: caller_offset+1
         end
       end
 
-      Thread.current[:tracee_checkpoint] = now
+      self.checkpoint = now
       nil
     end
 
     def tick!(msg='', caller_offset: 0)
-      return unless @benchmark or info?
+      return unless benchmarker or info?
 
-      @benchmark.first! if @benchmark
-      Thread.current[:tracee_checkpoint] = nil
+      benchmarker.first! if benchmarker
+      self.checkpoint = nil
 
       tick msg, caller_offset: caller_offset+1
     end
 
-    alias bm benchmark
+    def benchmarker
+      Thread.current[:tracee_benchmarker]
+    end
 
+    def benchmarker=(bm)
+      Thread.current[:tracee_benchmarker] = bm
+    end
+
+    def checkpoint
+      Thread.current[:tracee_checkpoint]
+    end
+
+    def checkpoint=(cp)
+      Thread.current[:tracee_checkpoint] = cp
+    end
 
     private
 
