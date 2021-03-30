@@ -2,10 +2,6 @@ module Tracee
   module Extensions
     module Exception
 
-      def self.prepended(exc_class)
-        exc_class.send :class_attribute, :trace_decorator
-      end
-
       # Check if it's not the version that always freezes on error with the trace decorator.
       if RUBY_VERSION <= '2.3.1'
         ## Gotcha:

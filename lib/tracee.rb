@@ -56,25 +56,28 @@ module Tracee
   # Default logger to respond to Object#__log__
   mattr_accessor :default_logger
 
-  # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrors.
-  if defined? ::BetterErrors::ExceptionExtension
-    # BetterErrors was loaded and BetterErrors::ExceptionExtension was prepended to Exception.
-    # There is no way to seamlessly use another extension in between them
-    # without side-effects, so we just skip extending.
-    warn "Skipping injecting Tracee::Extensions::Exception because BetterErrors has been loaded prior to Tracee"
+  if RUBY_VERSION <= '2.3.1'
+    # In order to use Tracee's trace decorator with BetterErrors, Tracee must be loaded prior to BetterErrors.
+    if defined? ::BetterErrors::ExceptionExtension
+      # BetterErrors was loaded and BetterErrors::ExceptionExtension was prepended to Exception.
+      # There is no way to seamlessly use another extension in between them
+      # without side-effects, so we just skip extending.
+      warn "Skipping injecting Tracee::Extensions::Exception because BetterErrors has been loaded prior to Tracee"
+    else
+      # BetterErrors has not yet been loaded or will not be loaded at all.
+      # Just insert the extension before Exception.
+      ::Exception.prepend Tracee::Extensions::Exception
+    end
+    ::Exception.send :class_attribute, :trace_decorator
   else
-    # BetterErrors has not yet been loaded or will not be loaded at all.
-    # Just insert the extension before Exception.
-    ::Exception.prepend Tracee::Extensions::Exception
+    # Unobtrusively inject #log, ignore trace decoration
+    ::Exception.include Tracee::Extensions::Exception
   end
-  ::Exception.send :class_attribute, :trace_decorator
-
 
   # Doesn't work with Rails 5+
   module ::ActiveSupport::TaggedLogging::Formatter
     include Tracee::Extensions::ActiveSupport::TaggedLogging::Formatter
   end
-
 
   # Use `Tracee.decorate_stack_everywhere` only within a console or during manual testing,
   # because it significantly slows down rails middleware.
