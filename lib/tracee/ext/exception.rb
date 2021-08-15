@@ -57,7 +57,7 @@ module Tracee
       # end
       ##
       def log
-        Rails.logger.error(
+        Tracee.default_logger.error(
           [
             "The exception has been handled: #{description}:",
             *(
@@ -65,7 +65,8 @@ module Tracee
                 backtrace_with_cause_backtrace :
                 backtrace_with_cause_backtrace.reject { |line| line =~ IGNORE_RE }
               )
-          ].join("\n")
+          ].join("\n"),
+          caller_at: 1
         )
       end
 
