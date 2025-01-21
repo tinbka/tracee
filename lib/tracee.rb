@@ -33,7 +33,7 @@ module Tracee
   CALLER_RE = \
     %r{^(?<path>.*?(?<file>[^/\\]+?))#{ # ( path ( file ) )
       }:(?<line>\d+)(?::in #{ # :( line )[ :in
-      }`(?<is_block>block (?:\((?<block_level>\d+) levels\) )?in )?(?<method>.+?)'#{ # `( [ block in ] closure )' ]
+      }[`'](?<is_block>block (?:\((?<block_level>\d+) levels\) )?in )?(?<method>.+?)'#{ # `( [ block in ] closure )' ]
       })?$}
 
   IGNORE_RE = \
