@@ -111,7 +111,7 @@ module Tracee
     private
 
     def highlight_time_diff(diff)
-      diff.round(6).to_s.sub(/(\d+)\.(\d{0,3})(\d*)$/) {|m| "#$1.".light_white + $2.white + $3.light_black}
+      ("%.6f" % diff).sub(/(\d+)\.(\d{0,3})(\d*)$/) {|m| "#$1.".light_white + $2.white + $3.light_black}
     end
 
   end
