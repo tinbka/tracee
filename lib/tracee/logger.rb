@@ -141,6 +141,8 @@ module Tracee
           else
             msg = args[0]
           end
+          # Although in all other cases it works like `print`, `nil` logged as "nil" for visibility
+          msg = 'nil' if msg.nil?
 
           if should_process_caller?
             caller = caller(1)

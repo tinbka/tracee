@@ -21,7 +21,7 @@ module Tracee::Preprocessors
 
     def call(msg_level, datetime, progname, msg, caller_slice=[])
       case msg
-      when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>(?:[\d\.]+|[\da-f:]+)) at (?<time>[\d\-]+ [\d:]+(?: \+\d{4})?)}
+      when %r{^Started (?<method>[A-Z]+) "(?<path>/[^"]*)" for (?<ip>(?:[\d\.]+|[\da-f:]+)) at (?<time>[\d\-]+ [\d:]+(?: (\+\d{4}|[A-Z]{3}))?)}
         m = $~
         %{Started #{m[:method].send @color_map[:head]} "#{m[:path].send @color_map[:head]}" for #{m[:ip].send @color_map[:head]} at #{m[:time].send @color_map[:head]}}
       when %r{^Processing by (?<class>[A-Z][\w:]+)#(?<method>\w+) as (?<format>[A-Z]+|\*\/\*)$}
@@ -42,6 +42,9 @@ module Tracee::Preprocessors
       when %r{^(BetterErrors::RaisedException|#@exception_classes_re) (.+)}
         m = $~
         "#{m[1].send @color_map[:raise]} #{m[2]}"
+      when %r{Enqueued (?<job>\w+) \(Job ID: (?<id>[\da-f\-]+)\) to (?<env>\w+)\((?<queue>\w+)\) at (?<time>[\d\-]+ [\d:]+(?: (\+\d{4}|[A-Z]{3}))?) with arguments: (?<args>.+)}
+        m = $~
+        %{Enqueued #{m[:job].send @color_map[:action]} (Job ID: #{m[:id].send @color_map[:head]}) to #{m[:env].send @color_map[:head]}(#{m[:queue].send @color_map[:head]}) at #{m[:time].send @color_map[:head]} with arguments: #{m[:args].send @color_map[:params]}}
       else
         msg
       end
