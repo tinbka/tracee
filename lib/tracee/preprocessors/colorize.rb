@@ -42,9 +42,10 @@ module Tracee::Preprocessors
       when %r{^(BetterErrors::RaisedException|#@exception_classes_re) (.+)}
         m = $~
         "#{m[1].send @color_map[:raise]} #{m[2]}"
-      when %r{Enqueued (?<job>\w+) \(Job ID: (?<id>[\da-f\-]+)\) to (?<env>\w+)\((?<queue>\w+)\) at (?<time>[\d\-]+ [\d:]+(?: (\+\d{4}|[A-Z]{3}))?) with arguments: (?<args>.+)}
+      when %r{(?<verb>(Enqueued|Performing|Performed)) (?<job>[\w:]+) \(Job ID: (?<id>[\da-f\-]+)\) (?<dir>(to|from)) (?<env>\w+)\((?<queue>\w+)\) ((?<at>(enqueued )?at )(?<time>[\d\-]+[ T][\d:]+(?:( \+\d{4}| [A-Z]{3}|Z))? ))?(?<with>with arguments: )?(?<args>.*)}
         m = $~
-        %{Enqueued #{m[:job].send @color_map[:action]} (Job ID: #{m[:id].send @color_map[:head]}) to #{m[:env].send @color_map[:head]}(#{m[:queue].send @color_map[:head]}) at #{m[:time].send @color_map[:head]} with arguments: #{m[:args].send @color_map[:params]}}
+        args = m[:args].send(@color_map[:params]).sub(/\e\[0;33m"([\w:]+)"/, "\e[0;33m\"#{'\1'.send(@color_map[:action]) }\e[0;33m\"")
+        %{#{m[:verb]} #{m[:job].send @color_map[:action]} (Job ID: #{m[:id].send @color_map[:head]}) #{m[:dir]} #{m[:env].send @color_map[:head]}(#{m[:queue].send @color_map[:head]}) #{m[:at]}#{m[:time].try @color_map[:head]}#{"\n  Arguments: " if m[:with]}#{args}}
       else
         msg
       end
